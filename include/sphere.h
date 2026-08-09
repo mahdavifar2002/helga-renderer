@@ -12,6 +12,7 @@ class sphere : public hittable {
     {
         auto rvec = vec3(radius, radius, radius);
         bbox = aabb(static_center - rvec, static_center + rvec);
+        area = 4*pi*radius*radius;
     }
     
     // Moving Sphere
@@ -24,7 +25,7 @@ class sphere : public hittable {
         bbox = aabb(box1, box2);
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         point3 current_center = center.at(r.time());
         vec3 oc = current_center - r.origin();
         auto a = r.direction().length_squared();
@@ -55,6 +56,8 @@ class sphere : public hittable {
         return true;
     }
 
+    double surface() const override { return area; }
+
     aabb bounding_box() const override { return bbox; }
 
     static void get_sphere_uv(const point3& p, double& u, double& v) {
@@ -75,6 +78,7 @@ class sphere : public hittable {
   private:
     ray center;
     double radius;
+    double area;
     shared_ptr<material> mat;
     aabb bbox;
 };

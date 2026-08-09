@@ -17,7 +17,7 @@ class constant_medium : public hittable {
         phase_function(make_shared<isotropic>(albedo))
     {}
     
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         hit_record rec1, rec2;
 
         if (!boundary->hit(r, interval::universe, rec1))
@@ -51,6 +51,8 @@ class constant_medium : public hittable {
         
         return true;
     }
+
+    double surface() const override { return boundary->surface(); }
 
     aabb bounding_box() const override { return boundary->bounding_box(); }
 

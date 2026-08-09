@@ -65,10 +65,6 @@ using point3 = vec3;
 
 // Vector Utility Functions
 
-inline std::ostream& operator<<(std::ostream& out, const vec3& v) {
-    return out << v.e[0] << ' ' << v.e[1] << ' ' << v.e[2];
-}
-
 inline vec3 operator+(const vec3& u, const vec3& v) {
     return vec3(u.e[0] + v.e[0], u.e[1] + v.e[1], u.e[2] + v.e[2]);
 }
@@ -93,6 +89,11 @@ inline vec3 operator/(const vec3& v, double t) {
     return (1/t) * v;
 }
 
+inline std::ostream& operator<<(std::ostream& os, const vec3& v) {
+    os << "(" << v.e[0] << ", " << v.e[1] << ", " << v.e[2] << ")";
+    return os;
+}
+
 inline double dot(const vec3& u, const vec3& v) {
     return u.e[0] * v.e[0]
          + u.e[1] * v.e[1]
@@ -115,6 +116,10 @@ inline vec3 random_in_unit_disk() {
         if (p.length_squared() < 1)
             return p;
     }
+}
+
+inline vec3 random_in_unit_square() {
+    return vec3(random_double(-1, 1), random_double(-1, 1), 0);
 }
 
 inline vec3 random_unit_vector() {

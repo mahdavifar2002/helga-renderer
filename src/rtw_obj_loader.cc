@@ -63,7 +63,7 @@ bool rtw_obj::load(const std::string& model_dir, const std::string& filename) {
         return false;
     }
 
-    if (!reader.Warning().empty()) { std::cout << "TinyObjReader: " << reader.Warning(); }
+    if (!reader.Warning().empty()) { std::cerr << "TinyObjReader: " << reader.Warning(); }
 
     auto &attrib = reader.GetAttrib();
     auto &shapes = reader.GetShapes();

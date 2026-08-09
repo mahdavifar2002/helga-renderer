@@ -27,6 +27,7 @@ add_executable(RayTracer
     src/scene_parser.cc
     src/rtw_stb_image.cc
     src/rtw_obj_loader.cc
+    src/rtw_stb_image_write.cc
 )
 target_include_directories(RayTracer PRIVATE include)
 

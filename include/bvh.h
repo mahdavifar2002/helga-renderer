@@ -14,8 +14,10 @@ class bvh_node : public hittable {
     bvh_node(std::vector<shared_ptr<hittable>>& objects, size_t start, size_t end) {
         // Build the bounding box of the span of source objects.
         bbox = aabb::empty;
-        for (size_t object_index = start; object_index < end; object_index++)
+        for (size_t object_index = start; object_index < end; object_index++) {
             bbox = aabb(bbox, objects[object_index]->bounding_box());
+            area += objects[object_index]->surface();
+        }
         
         // int axis = random_int(0, 2);
         int axis = bbox.longest_axis();
@@ -40,7 +42,7 @@ class bvh_node : public hittable {
         }
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         if (!bbox.hit(r, ray_t))
             return false;
 
@@ -50,11 +52,14 @@ class bvh_node : public hittable {
         return hit_left || hit_right;
     }
 
+    double surface() const override { return area; }
+
     aabb bounding_box() const override { return bbox; }
 
   private:
     shared_ptr<hittable> left;
     shared_ptr<hittable> right;
+    double area;
     aabb bbox;
 
     static bool box_compare(

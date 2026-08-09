@@ -23,9 +23,10 @@ class hittable_list : public hittable {
     void add(shared_ptr<hittable> object) {
         objects.push_back(object);
         bbox = aabb(bbox, object->bounding_box());
+        area += object->surface();
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         hit_record temp_rec;
         bool hit_anything = false;
         auto closest_so_far = ray_t.max;
@@ -41,9 +42,12 @@ class hittable_list : public hittable {
         return hit_anything;
     }
 
+    double surface() const override { return area; }
+
     aabb bounding_box() const override { return bbox; }
 
   private:
+    double area;
     aabb bbox;
 };
 

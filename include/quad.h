@@ -17,6 +17,8 @@ class quad : public hittable {
         D = dot(normal, Q);
         w = n / dot(n, n);
 
+        quad_area = n.length();
+
         set_bounding_box();
     }
 
@@ -27,7 +29,7 @@ class quad : public hittable {
         bbox = aabb(bbox_diagonal1, bbox_diagonal2);
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         auto denom = dot(normal, r.direction());
 
         // No hit if the ray is parallel to the plane.
@@ -69,6 +71,8 @@ class quad : public hittable {
         rec.v = b;
         return true;
     }
+    
+    double surface() const override { return quad_area; }
 
     aabb bounding_box() const override { return bbox; }
 
@@ -77,6 +81,7 @@ class quad : public hittable {
     vec3 u, v;
     shared_ptr<material> mat;
     aabb bbox;
+    double quad_area;
 
   private:
     // normal.point = A.x+B.y+C.z = D, for all points in quad.
@@ -122,6 +127,8 @@ class tri : public quad {
         uv[1][0] = u1; uv[1][1] = v1;
         uv[2][0] = u2; uv[2][1] = v2;
     }
+    
+    double surface() const override { return quad::surface() / 2; }
     
     void set_bounding_box() override {
         auto bbox_diagonal1 = aabb(Q, Q + u);
@@ -193,6 +200,8 @@ class ellipse : public quad {
     {
         set_bounding_box();
     }
+
+    double surface() const override { return pi*quad::surface(); }
     
     void set_bounding_box() override {
         auto bbox_diagonal1 = aabb(Q - u - v, Q + u + v);

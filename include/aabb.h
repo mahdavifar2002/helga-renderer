@@ -32,11 +32,11 @@ class aabb {
         z = interval(box1.z, box2.z);
     }
 
-    point3 min() {
+    const point3 min() const {
         return point3(x.min, y.min, z.min);
     }
 
-    point3 max() {
+    const point3 max() const {
         return point3(x.max, y.max, z.max);
     }
 
@@ -110,8 +110,7 @@ inline aabb operator+(const vec3& offset, const aabb& bbox) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, const aabb& bbox) {
-    os << "(" << bbox.x.min << ", " << bbox.y.min << ", " << bbox.z.min << "), "
-       << "(" << bbox.x.max << ", " << bbox.y.max << ", " << bbox.z.max << ")";
+    os << bbox.min() << ", " << bbox.max();
     return os;
 }
 

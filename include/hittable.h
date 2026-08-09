@@ -28,7 +28,9 @@ class hittable {
   public:
     virtual ~hittable() = default;
 
-    virtual bool hit(const ray& r, interval ray_t, hit_record& rec) const = 0;
+    virtual bool hit(const ray& r, const interval& ray_t, hit_record& rec) const = 0;
+
+	virtual double surface() const = 0;
 
     virtual aabb bounding_box() const = 0;
 };
@@ -41,7 +43,7 @@ class translate : public hittable {
         bbox = object->bounding_box() + offset;
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         // Move the ray backwards by the offset
         ray offset_r(r.origin() - offset, r.direction(), r.time());
 
@@ -54,6 +56,8 @@ class translate : public hittable {
 
         return true;
     }
+
+	double surface() const override { return object->surface(); }
 
     aabb bounding_box() const override {
         return bbox;
@@ -100,7 +104,7 @@ class rotate : public hittable {
         bbox = aabb(min, max);
     }
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
 
         // Transform the ray from world space to object space.
 
@@ -120,6 +124,8 @@ class rotate : public hittable {
 
         return true;
     }
+
+	double surface() const override { return object->surface(); }
 
     aabb bounding_box() const override {
         return bbox;
