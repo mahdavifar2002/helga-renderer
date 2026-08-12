@@ -22,6 +22,7 @@ endif()
 
 # Define the executable name ("RayTracer") and its source and header files
 add_executable(RayTracer 
+    src/pdf.cc
     src/main.cc
     src/camera.cc
     src/scene_parser.cc

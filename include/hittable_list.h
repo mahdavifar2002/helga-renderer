@@ -46,6 +46,20 @@ class hittable_list : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
+    double pdf_value(const point3& origin, const vec3& direction) const override {
+        auto sum = 0.0;
+
+        for (const auto& object : objects)
+            sum += object->pdf_value(origin, direction);
+        
+        return sum / objects.size();
+    }
+
+    vec3 random_direction(const point3& origin) const override {
+        auto int_size = int(objects.size());
+        return objects[random_int(0, int_size - 1)]->random_direction(origin);
+    }
+
   private:
     double area;
     aabb bbox;

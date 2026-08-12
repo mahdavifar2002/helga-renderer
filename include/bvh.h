@@ -56,6 +56,17 @@ class bvh_node : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
+    double pdf_value(const point3& origin, const vec3& direction) const override {
+        return 0.5 * left->pdf_value(origin, direction) + 0.5 * right->pdf_value(origin, direction);
+    }
+
+    vec3 random_direction(const point3& origin) const override {
+        if (random_double() < 0.5)
+            return left->random_direction(origin);
+        else
+            return right->random_direction(origin);
+    }
+
   private:
     shared_ptr<hittable> left;
     shared_ptr<hittable> right;

@@ -38,11 +38,16 @@ class lambertian : public material {
         return true;
     }
 
+    double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const override {
+        auto cosine_theta = dot(rec.normal, unit_vector(scattered.direction()));
+        return std::fmax(0, cosine_theta / pi);
+    }
+
   private:
     shared_ptr<texture> tex;
 };
 
-class metal :public material {
+class metal : public material {
   public:
     metal(const color& albedo, double fuzz) : albedo(albedo), fuzz((fuzz < 1) ? fuzz : 1) {}
 
@@ -121,6 +126,10 @@ class isotropic : public material {
         scattered = ray(rec.p, random_unit_vector(), r_in.time());
         attenuation = tex->value(rec.u, rec.v, rec.p);
         return true;
+    }
+
+    double scattering_pdf(const ray& r_in, const hit_record& rec, const ray& scattered) const override {
+        return 1 / (4 * pi);
     }
 
   private:

@@ -76,6 +76,22 @@ class quad : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
+    double pdf_value(const point3& origin, const vec3& direction) const override {
+        hit_record rec;
+        if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
+            return 0;
+        
+        auto distance_squared = rec.t * rec.t * direction.length_squared();
+        auto cosine = std::fabs(dot(direction, rec.normal) / direction.length());
+
+        return distance_squared / (cosine * quad_area);
+    }
+
+    vec3 random_direction(const point3& origin) const override {
+        auto p = Q + (random_double() * u) + (random_double() * v);
+        return p - origin;
+    }
+
   protected:
     point3 Q;
     vec3 u, v;
@@ -152,6 +168,26 @@ class tri : public quad {
 
         return true;
     }
+
+    // Multiply by 2 since quad_area was twice the area of triangle
+    double pdf_value(const point3& origin, const vec3& direction) const override {
+        hit_record rec;
+        if (!this->hit(ray(origin, direction), interval(0.001, infinity), rec))
+            return 0;
+        
+        auto distance_squared = rec.t * rec.t * direction.length_squared();
+        auto cosine = std::fabs(dot(direction, rec.normal) / direction.length());
+
+        return 2 * distance_squared / (cosine * quad_area);
+    }
+
+    vec3 random_direction(const point3& origin) const override {
+        auto r1_sqrt = std::sqrt(random_double());
+        auto r2 = random_double();
+        auto p = Q + ((1 - r1_sqrt) * u) + (r1_sqrt * r2 * v);
+        return p - origin;
+    }
+
   private:
     // Storage for the UV coordinates of the 3 vertices
     double uv[3][2];

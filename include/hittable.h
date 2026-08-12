@@ -33,6 +33,16 @@ class hittable {
 	virtual double surface() const = 0;
 
     virtual aabb bounding_box() const = 0;
+
+    virtual double pdf_value(const point3& origin, const vec3& direction) const {
+		std::cerr << "WARNING: Function `pdf_value` not implemented" << std::endl;
+		return 0.0;
+    }
+
+    virtual vec3 random_direction(const point3& origin) const {
+		std::cerr << "WARNING: Function `random_direction` not implemented" << std::endl;
+		return vec3(1, 0, 0);
+    }
 };
 
 class translate : public hittable {
@@ -61,6 +71,14 @@ class translate : public hittable {
 
     aabb bounding_box() const override {
         return bbox;
+    }
+
+    double pdf_value(const point3& origin, const vec3& direction) const override {
+        return object->pdf_value(origin - offset, direction);
+    }
+
+    vec3 random_direction(const point3& origin) const override {
+        return object->random_direction(origin - offset);
     }
 
   private:
@@ -129,6 +147,19 @@ class rotate : public hittable {
 
     aabb bounding_box() const override {
         return bbox;
+    }
+
+    double pdf_value(const point3& origin, const vec3& direction) const override {
+        auto rotated_origin = rotate_vec(origin, -sin_theta, cos_theta, axis);
+        auto rotated_direction = rotate_vec(direction, -sin_theta, cos_theta, axis);
+        return object->pdf_value(rotated_origin, rotated_direction);
+    }
+
+    vec3 random_direction(const point3& origin) const override {
+		auto rotated_origin = rotate_vec(origin, -sin_theta, cos_theta, axis);
+        auto rotated_direction = object->random_direction(rotated_origin);
+		return rotate_vec(rotated_direction, sin_theta, cos_theta, axis);
+
     }
 
   private:
