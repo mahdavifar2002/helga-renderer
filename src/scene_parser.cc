@@ -69,24 +69,34 @@ namespace {
     }
 
     // Forward declare parse_hittable if it needs to call itself recursively
-    shared_ptr<hittable> parse_hittable(const json& j);
+    shared_ptr<hittable> parse_hittable(const json& j, shared_ptr<hittable>& lights);
 
-    shared_ptr<hittable> parse_hittable(const json& j) {
+    shared_ptr<hittable> parse_hittable(const json& j, shared_ptr<hittable>& lights) {
+        lights = nullptr;
+        shared_ptr<hittable> result = nullptr;
         std::string type = j["type"].get<std::string>();
 
         if (type == "sphere") {
             auto mat = parse_material(j["material"]);
             if (j.contains("center2")) {
-                return make_shared<sphere>(parse_vec3(j["center"]), parse_vec3(j["center2"]), j["radius"].get<double>(), mat);
+                result = make_shared<sphere>(parse_vec3(j["center"]), parse_vec3(j["center2"]), j["radius"].get<double>(), mat);
             } else {
-                return make_shared<sphere>(parse_vec3(j["center"]), j["radius"].get<double>(), mat);
+                result = make_shared<sphere>(parse_vec3(j["center"]), j["radius"].get<double>(), mat);
             }
+            if (mat->emits())
+                lights = result;
         }
         else if (type == "quad") {
-            return make_shared<quad>(parse_vec3(j["Q"]), parse_vec3(j["u"]), parse_vec3(j["v"]), parse_material(j["material"]));
+            auto mat = parse_material(j["material"]);
+            result = make_shared<quad>(parse_vec3(j["Q"]), parse_vec3(j["u"]), parse_vec3(j["v"]), mat);
+            if (mat->emits())
+                lights = result;
         }
         else if (type == "box") {
-            return box(parse_vec3(j["a"]), parse_vec3(j["b"]), parse_material(j["material"]));
+            auto mat = parse_material(j["material"]);
+            result = box(parse_vec3(j["a"]), parse_vec3(j["b"]), mat);
+            if (mat->emits())
+                lights = result;
         }
         else if (type == "mesh") {
             shared_ptr<material> mat_override = nullptr;
@@ -96,37 +106,76 @@ namespace {
                 mat_override = parse_material(j["material"]);
             }
 
-            return mesh(j["filename"].get<std::string>().c_str(), mat_override, j.value("scale", 1.0));
+            result = mesh(j["filename"].get<std::string>().c_str(), lights, mat_override, j.value("scale", 1.0));
         }
         else if (type == "translate") {
-            return make_shared<translate>(parse_hittable(j["object"]), parse_vec3(j["offset"]));
+            auto offset = parse_vec3(j["offset"]);
+            shared_ptr<hittable> object_lights;
+            result = make_shared<translate>(parse_hittable(j["object"], object_lights), offset);
+            if (object_lights != nullptr)
+                lights = make_shared<translate>(object_lights, offset);
         }
         else if (type == "rotate_x") {
-            return make_shared<rotate_x>(parse_hittable(j["object"]), j["angle"].get<double>());
+            auto angle = j["angle"].get<double>();
+            shared_ptr<hittable> object_lights;
+            result = make_shared<rotate_x>(parse_hittable(j["object"], object_lights), angle);
+            if (object_lights != nullptr)
+                lights = make_shared<rotate_x>(object_lights, angle);
         }
         else if (type == "rotate_y") {
-            return make_shared<rotate_y>(parse_hittable(j["object"]), j["angle"].get<double>());
+            auto angle = j["angle"].get<double>();
+            shared_ptr<hittable> object_lights;
+            result = make_shared<rotate_y>(parse_hittable(j["object"], object_lights), angle);
+            if (object_lights != nullptr)
+                lights = make_shared<rotate_y>(object_lights, angle);
         }
         else if (type == "rotate_z") {
-            return make_shared<rotate_z>(parse_hittable(j["object"]), j["angle"].get<double>());
+            auto angle = j["angle"].get<double>();
+            shared_ptr<hittable> object_lights;
+            result = make_shared<rotate_z>(parse_hittable(j["object"], object_lights), angle);
+            if (object_lights != nullptr)
+                lights = make_shared<rotate_z>(object_lights, angle);
         }
         else if (type == "constant_medium") {
-            if (j.contains("color")) {
-                return make_shared<constant_medium>(parse_hittable(j["object"]), j["density"].get<double>(), parse_color(j["color"]));
-            }
+            auto density = j["density"].get<double>();
+            result = make_shared<constant_medium>(parse_hittable(j["object"], lights), density, parse_color(j["color"]));
         }
         else if (type == "bvh_node") {
-            hittable_list list;
+            hittable_list objects_list;
+            hittable_list lights_list;
             for (const auto& item : j["objects"]) {
-                list.add(parse_hittable(item));
+                shared_ptr<hittable> item_lights;
+                objects_list.add(parse_hittable(item, item_lights));
+                if (item_lights != nullptr)
+                    lights_list.add(item_lights);
             }
-            return make_shared<bvh_node>(list);
+            result = make_shared<bvh_node>(objects_list);
         }
 
-        std::cerr << "Unknown hittable type: " << type << "\n";
-        return nullptr;
+        if (result == nullptr)
+            std::cerr << "Unknown hittable type: " << type << "\n";
+        
+        return result;
     }
 
+    shared_ptr<integrator> parse_integrator(const std::string& value) {
+        shared_ptr<integrator> integ;
+
+        if (value == "path_tracing")
+            integ = make_shared<path_tracing_integrator>();
+        else if (value == "mis_mixture")
+            integ = make_shared<MIS_mixture_integrator>();
+        else if (value == "nee")
+            integ = make_shared<NEE_integrator>();
+        else if (value == "mis_nee")
+            integ = make_shared<MIS_NEE_integrator>();
+        else {
+            std::cerr << "Unknown integrator: " << value << "\n";
+            integ = make_shared<MIS_NEE_integrator>();
+        }
+
+        return integ;
+    }
 } // --- End Anonymous Namespace ---
 
 
@@ -163,15 +212,29 @@ bool scene_parser::load(const std::string& filename) {
     json scene_data;
     file >> scene_data;
 
-    // 1. Parse Camera
+    // 1. Parse Render Parameters
+    if (scene_data.contains("render")) {
+        auto r = scene_data["render"];
+        integ = parse_integrator(r.value("integrator", "mis_nee"));
+        cam.image_width       = r.value("image_width", 400);
+        cam.samples_per_pixel = r.value("samples_per_pixel", 10);
+        integ->max_depth      = r.value("max_depth", 6);
+
+        // 1.2. Parse Post-Processing Parameters
+        if (r.contains("post_processing")) {
+            auto p = r["post_processing"];
+
+            cam.tone_mapping = p.value("tone_mapping", "reinhard");
+            cam.gamma        = p.value("gamma", 2.2);
+            cam.exposure     = p.value("exposure", 1.0);
+        }
+    }
+
+    // 2. Parse Camera
     if (scene_data.contains("camera")) {
         auto c = scene_data["camera"];
-        cam.aspect_ratio      = c.value("aspect_ratio", 16.0 / 9.0);
-        cam.image_width       = c.value("image_width", 400);
-        cam.samples_per_pixel = c.value("samples_per_pixel", 100);
-        cam.exposure          = c.value("exposure", 1.0);
-        cam.max_depth         = c.value("max_depth", 6);
-        cam.vfov              = c.value("vfov", 40.0);
+        cam.aspect_ratio = c.value("aspect_ratio", 1.0);
+        cam.vfov         = c.value("vfov", 90.0);
        
         if (c.contains("lookfrom")) cam.lookfrom = parse_vec3(c["lookfrom"]);
         if (c.contains("lookat"))   cam.lookat = parse_vec3(c["lookat"]);
@@ -179,23 +242,32 @@ bool scene_parser::load(const std::string& filename) {
        
         cam.defocus_angle = c.value("defocus_angle", 0.0);
         cam.focus_dist    = c.value("focus_dist", 10.0);
-
-        if (c.contains("background")) {
-            cam.background = parse_texture(c["background"]);
-        } else {
-            cam.background = make_shared<solid_color>(color(0,0,0));
-        }
     }
 
-    // 2. Parse World
+    // 3. Parse Background Texture
+    if (scene_data.contains("background")) {
+        background = parse_texture(scene_data["background"]);
+    } else {
+        background = make_shared<solid_color>(color(0,0,0));
+    }
+
+    // 4. Parse World and Extract Lights
+    lights = make_shared<hittable_list>();
     if (scene_data.contains("world")) {
         for (const auto& item : scene_data["world"]) {
-            world.add(parse_hittable(item)); // Calls the anonymous namespace function
+            shared_ptr<hittable> item_lights;
+            world.add(parse_hittable(item, item_lights)); // Calls the anonymous namespace function
+            if (item_lights != nullptr)
+                lights->add(item_lights);
         }
     }
+    std::cerr << lights->objects.size() << " light(s) found in the scene.\n";
    
     world = hittable_list(make_shared<bvh_node>(world));
 
+    integ->world = world;
+    integ->lights = lights;
+    integ->background = background;
     return true;
 }
 
@@ -207,6 +279,17 @@ void scene_parser::set_width(int width) {
     cam.image_width = width;
 }
 
+void scene_parser::set_integrator(std::string integrator_type) {
+    shared_ptr<integrator> new_integ = parse_integrator(integrator_type);
+    
+    new_integ->max_depth = integ->max_depth;
+    new_integ->world = world;
+    new_integ->lights = lights;
+    new_integ->background = background;
+
+    integ = new_integ;
+}
+
 void scene_parser::render_scene(const std::string& output_filename) {
-    cam.render(world, output_filename);
+    cam.render(integ, output_filename);
 }

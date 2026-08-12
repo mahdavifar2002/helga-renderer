@@ -5,6 +5,7 @@
 int main(int argc, char* argv[]) {
     std::string scene_file = "scene.json";
     std::string output_file = "image.ppm";
+    std::string integrator_type = "";
     int samples = 0;
     int width = 0;
 
@@ -19,6 +20,8 @@ int main(int argc, char* argv[]) {
             width = std::stoi(argv[++i]);
         } else if ((arg == "-o" || arg == "--output") && i + 1 < argc) {
             output_file = argv[++i];
+        } else if ((arg == "-o" || arg == "--integrator") && i + 1 < argc) {
+            integrator_type = argv[++i];
         }
     }
 
@@ -31,6 +34,7 @@ int main(int argc, char* argv[]) {
     // Override render parameters if provided
     if (samples) parser.set_samples_per_pixel(samples);
     if (width) parser.set_width(width);
+    if (!integrator_type.empty()) parser.set_integrator(integrator_type);
 
     // Render the scene
     parser.render_scene(output_file);

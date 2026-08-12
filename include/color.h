@@ -9,9 +9,9 @@
 
 using color = vec3;
 
-inline double linear_to_gamma(double linear_component) {
+inline double linear_to_gamma(double linear_component, double gamma) {
     if (linear_component > 0)
-        return std::pow(linear_component, 1.0 / 2.2);
+        return std::pow(linear_component, 1.0 / gamma);
     
     return 0;
 }
@@ -22,9 +22,9 @@ inline void write_color(std::ostream& out, const color& pixel_color) {
     auto b = pixel_color.z();
 
     // Apply a linear to gamma transformation for gamma 2.
-    r = linear_to_gamma(r);
-    g = linear_to_gamma(g);
-    b = linear_to_gamma(b);
+    r = linear_to_gamma(r, 2.0);
+    g = linear_to_gamma(g, 2.0);
+    b = linear_to_gamma(b, 2.0);
 
     auto max = std::fmax(r, std::fmax(g, b));
 

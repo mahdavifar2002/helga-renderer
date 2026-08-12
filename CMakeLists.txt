@@ -25,6 +25,7 @@ add_executable(RayTracer
     src/pdf.cc
     src/main.cc
     src/camera.cc
+    src/integrator.cc
     src/scene_parser.cc
     src/rtw_stb_image.cc
     src/rtw_obj_loader.cc

@@ -200,33 +200,40 @@ inline std::string get_base_dir(const std::string& filepath) {
     return "";
 }
 
-
-inline shared_ptr<bvh_node> mesh(const char* filepath, shared_ptr<material> override_mat = nullptr, double scale = 1) {
+inline shared_ptr<bvh_node> mesh(const char* filepath, shared_ptr<hittable>& lights, shared_ptr<material> override_mat = nullptr, double scale = 1) {
     std::string path_str(filepath);
     std::string base_dir = get_base_dir(path_str);
     std::string filename = path_str.substr(base_dir.length());
 
     auto obj = rtw_obj(base_dir, filename);
-    hittable_list faces;
+    hittable_list faces_list;
+    hittable_list lights_list;
     
     for (const auto& face : obj.faces) {
         shared_ptr<material> face_mat = override_mat ? override_mat : obj.materials[face.mat_id];
 
-        faces.add(make_shared<tri>(scale * face.vertices[0],
-                                    scale * (face.vertices[1] - face.vertices[0]),
-                                    scale * (face.vertices[2] - face.vertices[0]),
-                                    face_mat,
-                                    // Pass the UV coordinates from tinyobjloader
-                                    face.tex_u[0], face.tex_v[0],
-                                    face.tex_u[1], face.tex_v[1],
-                                    face.tex_u[2], face.tex_v[2]
-                                ));        
+        shared_ptr<tri> t = make_shared<tri>(scale * face.vertices[0],
+                                             scale * (face.vertices[1] - face.vertices[0]),
+                                             scale * (face.vertices[2] - face.vertices[0]),
+                                             face_mat,
+                                             // Pass the UV coordinates from tinyobjloader
+                                             face.tex_u[0], face.tex_v[0],
+                                             face.tex_u[1], face.tex_v[1],
+                                             face.tex_u[2], face.tex_v[2]
+                                            );
+        
+        faces_list.add(t);
+        
+        if (face_mat->emits())
+            lights_list.add(t);
     }
 
     std::cerr << "> Object '" << filename << "' loaded into the scene with " << obj.faces.size() << " triangles.\n";
-    std::cerr << "> Bounding box: " << faces.bounding_box() << "\n";
+    std::cerr << "> Bounding box: " << faces_list.bounding_box() << "\n";
 
-    return make_shared<bvh_node>(faces);
+    if (!lights_list.objects.empty())
+        lights = make_shared<hittable_list>(lights_list);
+    return make_shared<bvh_node>(faces_list);
 }
 
 class ellipse : public quad {
