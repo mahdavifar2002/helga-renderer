@@ -22,17 +22,15 @@ inline shared_ptr<material> translate_mtl(const tinyobj::material_t& mtl, const 
     }
 
     // 3. Is it metallic? (Check Illumination model or strong Specular 'Ks')
-    // illum == 3 implies reflection. Or if the specular color is very bright.
-    bool is_metal = (mtl.illum == 3) || (mtl.specular[0] > 0.5 && mtl.specular[1] > 0.5 && mtl.specular[2] > 0.5);
+    // illum == 3 implies reflection. Or if the specular color is very bright and material is shiny.
+    bool is_metal = (mtl.illum == 3) || (mtl.specular[0] > 0.5 && mtl.specular[1] > 0.5 && mtl.specular[2] > 0.5 && mtl.shininess > 0);
     if (is_metal) {
         color albedo(mtl.diffuse[0], mtl.diffuse[1], mtl.diffuse[2]);
         
         // Convert Specular Exponent 'Ns' (usually 0 to 1000) to 'fuzz' (0.0 to 1.0)
         // High Ns = smooth/shiny (low fuzz). Low Ns = rough (high fuzz).
-        double fuzz = 1.0;
-        if (mtl.shininess > 0) {
-            fuzz = 1.0 - std::min(1.0, mtl.shininess / 1000.0);
-        }
+        double fuzz = 1.0 - std::min(1.0, mtl.shininess / 1000.0);
+        
         return make_shared<metal>(albedo, fuzz);
     }
 
