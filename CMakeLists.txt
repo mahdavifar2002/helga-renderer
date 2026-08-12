@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Define the name of your project
-project(RayTracer VERSION 1.0)
+project(helga VERSION 0.1)
 
 # Enable ccache for faster builds
 find_program(CCACHE_PROGRAM ccache)
@@ -20,8 +20,8 @@ elseif(MSVC)
     add_compile_options(/O2 /fp:fast)
 endif()
 
-# Define the executable name ("RayTracer") and its source and header files
-add_executable(RayTracer 
+# Define the executable name ("helga") and its source and header files
+add_executable(helga 
     src/pdf.cc
     src/main.cc
     src/camera.cc
@@ -31,10 +31,10 @@ add_executable(RayTracer
     src/rtw_obj_loader.cc
     src/rtw_stb_image_write.cc
 )
-target_include_directories(RayTracer PRIVATE include)
+target_include_directories(helga PRIVATE include)
 
 # Find and link OpenMP to multithread the render loop
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(RayTracer PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(helga PUBLIC OpenMP::OpenMP_CXX)
 endif()
