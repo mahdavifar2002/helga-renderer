@@ -1,9 +1,10 @@
 {
+  "render": {
+    "image_width": 1080,
+    "samples_per_pixel": 10000
+  },
   "camera": {
     "aspect_ratio": 1.0,
-    "image_width": 1080,
-    "samples_per_pixel": 10000,
-    "max_depth": 50,
     "vfov": 40,
     "lookfrom": [478, 278, -600],
     "lookat": [278, 278, 0],

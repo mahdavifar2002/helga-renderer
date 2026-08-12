@@ -1,10 +1,14 @@
 {
-  "camera": {
-    "aspect_ratio": 1.7777,
+  "render": {
     "image_width": 1920,
     "samples_per_pixel": 500,
-    "max_depth": 50,
-    "background": { "type": "solid", "color": [0.70, 0.80, 1.00] },
+    "post_processing": {
+      "tone_mapping": "none",
+      "gamma": 2.0
+    }
+  },
+  "camera": {
+    "aspect_ratio": 1.7777,
     "vfov": 20,
     "lookfrom": [13, 2, 3],
     "lookat": [0, 0, 0],
@@ -12,6 +16,7 @@
     "defocus_angle": 0.6,
     "focus_dist": 10
   },
+  "background": { "type": "solid", "color": [0.70, 0.80, 1.00] },
   "world": [
     {
       "type": "sphere",

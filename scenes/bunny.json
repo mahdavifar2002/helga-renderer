@@ -1,10 +1,11 @@
 {
-  "camera": {
-    "aspect_ratio": 1.7777,
+  "render": {
     "image_width": 1920,
     "samples_per_pixel": 200,
-    "max_depth": 50,
-    "background": { "type": "image", "filename": "hdri.jpg" },
+    "max_depth": 20
+  },
+  "camera": {
+    "aspect_ratio": 1.7777,
     "vfov": 20,
     "lookfrom": [0, 2, 10],
     "lookat": [0, 1, 0],
@@ -12,6 +13,7 @@
     "defocus_angle": 0.6,
     "focus_dist": 10
   },
+  "background": { "type": "image", "filename": "hdri.jpg" },
   "world": [
     {
       "type": "quad",

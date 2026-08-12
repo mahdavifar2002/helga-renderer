@@ -1,9 +1,24 @@
 {
-  "camera": {
-    "aspect_ratio": 1.0,
+  "render": {
+    "integrator": "path_tracing",
+    "integrator": "mis_mixture",
+    "integrator": "nee",
+    "integrator": "mis_nee",
+
     "image_width": 1080,
     "samples_per_pixel": 200,
-    "max_depth": 50,
+    "max_depth": 6,
+
+    "post_processing":
+    {
+      "tone_mapping": "reinhard",
+      "tone_mapping": "none",
+      "exposure": 1.0,
+      "gamma": 2.2
+    }
+  },
+  "camera": {
+    "aspect_ratio": 1.0,
     "vfov": 40,
     "lookfrom": [1, 1, 1],
     "lookat": [0, 0, 0],
@@ -12,10 +27,13 @@
     "focus_dist": 10
   },
 
+  "background": { "type": "solid", "color": [0, 0, 0] },
+  "background": { "type": "image", "filename": "table.jpg" },
+
   "texture": { "type": "solid", "color": [0, 0, 0] },
+  "texture": { "type": "image", "filename": "table.jpg" },
   "texture": { "type": "checker", "even": { }, "odd": { } },
   "texture": { "type": "checker", "c1": [0, 0, 0], "c2": [1, 1, 1] },
-  "texture": { "type": "image", "filename": "table.jpg" },
   "texture": { "type": "noise", "scale": 1 },
 
   "material": { "type": "lambertian", "albedo": [0, 0, 0] },

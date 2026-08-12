@@ -1,16 +1,17 @@
 {
+  "render": {
+    "image_width": 1920,
+    "samples_per_pixel": 200
+  },
   "camera": {
     "aspect_ratio": 1.7777,
-    "image_width": 1920,
-    "samples_per_pixel": 200,
-    "max_depth": 50,
-    "background": { "type": "solid", "color": [0.70, 0.80, 1.00] },
     "vfov": 20,
     "lookfrom": [13, 2, 3],
     "lookat": [0, 0, 0],
     "vup": [0, 1, 0],
     "defocus_angle": 0
   },
+  "background": { "type": "solid", "color": [0.70, 0.80, 1.00] },
   "world": [
     {
       "type": "sphere",

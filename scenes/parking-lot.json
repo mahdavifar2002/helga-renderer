@@ -1,22 +1,25 @@
 {
   "render": {
-    "image_width": 1920,
-    "samples_per_pixel": 200
+    "image_width": 1440,
+    "samples_per_pixel": 200,
+    "post_processing": {
+      "exposure": 10.0
+    }
   },
   "camera": {
-    "aspect_ratio": 1.7777,
+    "aspect_ratio": 1.3333,
     "vfov": 20,
-    "lookfrom": [-0.8, 3.3, 23],
-    "lookat": [-0.8, 2.3, 0],
+    "lookfrom": [0, 0.75, 7.5],
+    "lookat": [0, 0.75, 0],
     "vup": [0, 1, 0],
     "defocus_angle": 0.6,
-    "focus_dist": 23
+    "focus_dist": 7.5
   },
   "background_image": { "type": "image", "filename": "hdri.jpg" },
   "world": [
     {
       "type": "quad",
-      "Q": [-20, 0, -40], "u": [0, 0, 80], "v": [40, 0, 0],
+      "Q": [-5, 0, -10], "u": [0, 0, 20], "v": [10, 0, 0],
       "material": {
         "type": "lambertian",
         "texture": { "type": "image", "filename": "table.jpg" }
@@ -24,14 +27,14 @@
     },
     {
       "type": "rotate_y",
-      "angle": -30,
+      "angle": 0,
       "object": {
         "type": "translate",
         "offset": [0, 0, 0],
         "object": {
           "type": "mesh",
-          "filename": "livingroom/livingroom.obj",
-          "scale": 3
+          "filename": "parking-lot/parking-lot.obj",
+          "scale": 1
         }
       }
     }
