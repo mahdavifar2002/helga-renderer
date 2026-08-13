@@ -24,6 +24,7 @@ class hittable_list : public hittable {
         objects.push_back(object);
         bbox = aabb(bbox, object->bounding_box());
         area += object->surface();
+        total_size += object->size();
     }
 
     bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
@@ -46,6 +47,8 @@ class hittable_list : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
+    const size_t size() override { return total_size; }
+
     double pdf_value(const point3& origin, const vec3& direction) const override {
         auto sum = 0.0;
 
@@ -61,8 +64,9 @@ class hittable_list : public hittable {
     }
 
   private:
-    double area;
+    double area = 0;
     aabb bbox;
+    size_t total_size = 0;
 };
 
 #endif

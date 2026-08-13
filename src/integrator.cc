@@ -14,7 +14,7 @@ color path_tracing_integrator::ray_color(const ray& r, int depth) const {
 
     if (!world.hit(r, interval(0.001, infinity), rec)) {
         double u, v;
-        sphere::get_sphere_uv(unit_vector(r.direction()), u, v);
+        sphere::get_sphere_uv(r.direction(), u, v);
         return background->value(u, v, r.direction());
     }
     
@@ -38,7 +38,7 @@ color MIS_mixture_integrator::ray_color(const ray& r, int depth) const {
 
     if (!world.hit(r, interval(0.001, infinity), rec)) {
         double u, v;
-        sphere::get_sphere_uv(unit_vector(r.direction()), u, v);
+        sphere::get_sphere_uv(r.direction(), u, v);
         return background->value(u, v, r.direction());
     }
     
@@ -82,7 +82,7 @@ color NEE_integrator::ray_color(const ray& r, int depth, bool is_shadow, bool fr
             return color(0, 0, 0);
         
         double u, v;
-        sphere::get_sphere_uv(unit_vector(r.direction()), u, v);
+        sphere::get_sphere_uv(r.direction(), u, v);
         return background->value(u, v, r.direction());
     }
     
@@ -148,7 +148,7 @@ color MIS_NEE_integrator::ray_color(const ray& r, int depth, bool from_specular,
 
     if (!world.hit(r, interval(0.001, infinity), rec)) {
         double u, v;
-        sphere::get_sphere_uv(unit_vector(r.direction()), u, v);
+        sphere::get_sphere_uv(r.direction(), u, v);
         return background->value(u, v, r.direction());
     }
     
@@ -181,18 +181,18 @@ color MIS_NEE_integrator::ray_color(const ray& r, int depth, bool from_specular,
         auto bsdf_pdf   = srec.pdf_ptr;
 
         // ---------------------------------------------------------
-        // 1. INDIRECT CONTRIBUTION (BRDF Sampling Strategy)
+        // 1. INDIRECT CONTRIBUTION (BSDF Sampling Strategy)
         // ---------------------------------------------------------
         ray indirect_ray = ray(rec.p, bsdf_pdf->generate(), r.time());
-        auto p_brdf_indirect = bsdf_pdf->value(indirect_ray.direction());
+        auto p_bsdf_indirect = bsdf_pdf->value(indirect_ray.direction());
 
         double scatter_pdf_indirect = rec.mat->scattering_pdf(r, rec, indirect_ray);
 
-        color indirect_color = ray_color(indirect_ray, depth - 1, false, p_brdf_indirect);
+        color indirect_color = ray_color(indirect_ray, depth - 1, false, p_bsdf_indirect);
         
         color indirect_contribution = color(0, 0, 0);
-        if (p_brdf_indirect > 0.0)
-            indirect_contribution = srec.attenuation * indirect_color * scatter_pdf_indirect / p_brdf_indirect;
+        if (p_bsdf_indirect > 0.0)
+            indirect_contribution = srec.attenuation * indirect_color * scatter_pdf_indirect / p_bsdf_indirect;
 
         // ---------------------------------------------------------
         // 2. DIRECT CONTRIBUTION (Light Sampling Strategy)
@@ -201,9 +201,9 @@ color MIS_NEE_integrator::ray_color(const ray& r, int depth, bool from_specular,
 
         if (!lights->objects.empty()) {
             auto lights_pdf = make_shared<hittable_pdf>(lights, rec.p);
-            ray shadow_ray = ray(rec.p, unit_vector(lights_pdf->generate()), r.time());
+            ray shadow_ray = ray(rec.p, lights_pdf->generate(), r.time());
 
-            auto p_brdf_shadow  =   bsdf_pdf->value(shadow_ray.direction());
+            auto p_bsdf_shadow  =   bsdf_pdf->value(shadow_ray.direction());
             auto p_light_shadow = lights_pdf->value(shadow_ray.direction());
 
             auto scatter_pdf_shadow = rec.mat->scattering_pdf(r, rec, shadow_ray);
@@ -217,7 +217,7 @@ color MIS_NEE_integrator::ray_color(const ray& r, int depth, bool from_specular,
                 if (light_rec.mat->emits())
                     direct_color = light_rec.mat->emitted(light_rec);
             
-            auto mis_weight = power_heuristic(p_light_shadow, p_brdf_shadow);
+            auto mis_weight = power_heuristic(p_light_shadow, p_bsdf_shadow);
             if (p_light_shadow > 0.0) {
                 direct_contribution = srec.attenuation * direct_color * mis_weight * scatter_pdf_shadow / p_light_shadow;
             }

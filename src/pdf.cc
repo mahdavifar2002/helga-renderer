@@ -10,7 +10,7 @@ vec3 sphere_pdf::generate() const {
 
 
 double cosine_pdf::value(const vec3& direction) const {
-    auto cosine_theta = dot(unit_vector(direction), uvw.w());
+    auto cosine_theta = dot(direction, uvw.w());
     return std::fmax(0, cosine_theta / pi);
 }
 

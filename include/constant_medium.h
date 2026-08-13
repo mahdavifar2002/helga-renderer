@@ -35,14 +35,13 @@ class constant_medium : public hittable {
         if (rec1.t < 0)
             rec1.t = 0;
         
-        auto ray_length = r.direction().length();
-        auto distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
+        auto distance_inside_boundary = (rec2.t - rec1.t);
         auto hit_distance = neg_inv_density * std::log(random_double());
 
         if (hit_distance > distance_inside_boundary)
             return false;
         
-        rec.t = rec1.t + hit_distance / ray_length;
+        rec.t = rec1.t + hit_distance;
         rec.p = r.at(rec.t);
 
         rec.normal = vec3(1, 0, 0); // arbitrary, because isotropic material doesn't care
@@ -55,6 +54,8 @@ class constant_medium : public hittable {
     double surface() const override { return boundary->surface(); }
 
     aabb bounding_box() const override { return boundary->bounding_box(); }
+
+    const size_t size() override { return boundary->size(); }
 
   private:
     shared_ptr<hittable> boundary;

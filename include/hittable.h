@@ -34,6 +34,8 @@ class hittable {
 
     virtual aabb bounding_box() const = 0;
 
+    virtual const size_t size() { return 1; }
+
     virtual double pdf_value(const point3& origin, const vec3& direction) const {
 		std::cerr << "WARNING: Function `pdf_value` not implemented" << std::endl;
 		return 0.0;
@@ -69,9 +71,9 @@ class translate : public hittable {
 
 	double surface() const override { return object->surface(); }
 
-    aabb bounding_box() const override {
-        return bbox;
-    }
+    aabb bounding_box() const override { return bbox; }
+
+    const size_t size() override { return object->size(); }
 
     double pdf_value(const point3& origin, const vec3& direction) const override {
         return object->pdf_value(origin - offset, direction);
@@ -145,9 +147,9 @@ class rotate : public hittable {
 
 	double surface() const override { return object->surface(); }
 
-    aabb bounding_box() const override {
-        return bbox;
-    }
+    aabb bounding_box() const override { return bbox; }
+
+    const size_t size() override { return object->size(); }
 
     double pdf_value(const point3& origin, const vec3& direction) const override {
         auto rotated_origin = rotate_vec(origin, -sin_theta, cos_theta, axis);

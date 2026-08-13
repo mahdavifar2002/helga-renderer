@@ -93,18 +93,16 @@ class dielectric : public material {
 
         double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
 
-        vec3 unit_direction = unit_vector(r_in.direction());
-
-        double cos_theta = std::fmin(-dot(unit_direction, rec.normal), 1.0);
+        double cos_theta = std::fmin(-dot(r_in.direction(), rec.normal), 1.0);
         double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
 
         bool cannot_refract = ri * sin_theta > 1.0;
         vec3 direction;
 
         if (cannot_refract || reflectance(cos_theta, ri) > random_double())
-            direction = reflect(unit_direction, rec.normal);
+            direction = reflect(r_in.direction(), rec.normal);
         else
-            direction = refract(unit_direction, rec.normal, ri);
+            direction = refract(r_in.direction(), rec.normal, ri);
 
         srec.skip_pdf_ray = ray(rec.p, direction, r_in.time());
         return true;

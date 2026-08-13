@@ -17,6 +17,7 @@ class bvh_node : public hittable {
         for (size_t object_index = start; object_index < end; object_index++) {
             bbox = aabb(bbox, objects[object_index]->bounding_box());
             area += objects[object_index]->surface();
+            total_size += objects[object_index]->size();
         }
         
         // int axis = random_int(0, 2);
@@ -56,6 +57,8 @@ class bvh_node : public hittable {
 
     aabb bounding_box() const override { return bbox; }
 
+    const size_t size() override { return total_size; }
+
     double pdf_value(const point3& origin, const vec3& direction) const override {
         return 0.5 * left->pdf_value(origin, direction) + 0.5 * right->pdf_value(origin, direction);
     }
@@ -70,8 +73,9 @@ class bvh_node : public hittable {
   private:
     shared_ptr<hittable> left;
     shared_ptr<hittable> right;
-    double area;
+    double area = 0;
     aabb bbox;
+    size_t total_size = 0;
 
     static bool box_compare(
         const shared_ptr<hittable> a, const shared_ptr<hittable> b, int axis_index

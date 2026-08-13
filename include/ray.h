@@ -8,7 +8,7 @@ class ray {
     ray() {}
 
     ray(const point3& origin, const vec3& direction, double time)
-      : orig(origin), dir(direction), tm(time) {}
+      : orig(origin), dir(unit_vector(direction)), tm(time) {}
 
     ray(const point3& origin, const vec3& direction)
       : ray(origin, direction, 0) {}

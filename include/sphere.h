@@ -29,7 +29,7 @@ class sphere : public hittable {
     bool hit(const ray& r, const interval& ray_t, hit_record& rec) const override {
         point3 current_center = center.at(r.time());
         vec3 oc = current_center - r.origin();
-        auto a = r.direction().length_squared();
+        auto a = 1.0; // = r.direction().length_squared();
         auto h = dot(r.direction(), oc);
         auto c = oc.length_squared() - radius*radius;
         auto delta = h*h - a*c;

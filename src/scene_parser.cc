@@ -261,7 +261,7 @@ bool scene_parser::load(const std::string& filename) {
                 lights->add(item_lights);
         }
     }
-    std::cerr << lights->objects.size() << " light(s) found in the scene.\n";
+    std::cerr << lights->size() << " light primitive(s) found in the scene.\n";
    
     world = hittable_list(make_shared<bvh_node>(world));
 
