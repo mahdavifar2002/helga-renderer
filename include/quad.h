@@ -222,6 +222,9 @@ inline shared_ptr<bvh_node> mesh(const char* filepath, shared_ptr<hittable>& lig
                                              face.tex_u[2], face.tex_v[2]
                                             );
         
+        if (t->surface() == 0.0)
+            continue;
+
         faces_list.add(t);
         
         if (face_mat->emits())
