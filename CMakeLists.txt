@@ -1,6 +1,4 @@
 cmake_minimum_required(VERSION 3.10)
-
-# Define the name of your project
 project(helga VERSION 0.1)
 
 # Enable ccache for faster builds
@@ -9,32 +7,63 @@ if(CCACHE_PROGRAM)
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 endif()
 
-# Set the C++ standard to C++17 (the ray tracing books use modern C++)
+# Set the C++ standard to modern C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# --- Configuration Options ---
+option(BUILD_GUI "Build the graphical interface (requires SDL2/OpenGL)" OFF)
+option(USE_NATIVE_ARCH "Optimize for current CPU (Disable when distributing binaries)" OFF)
+
 # Force aggressive optimization and architecture-specific instructions
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(-O3 -march=native -ffast-math)
+    set(OPT_FLAGS "-O3" "-ffast-math")
+    if(USE_NATIVE_ARCH)
+        list(APPEND OPT_FLAGS "-march=native")
+    endif()
+    add_compile_options(${OPT_FLAGS})
 elseif(MSVC)
     add_compile_options(/O2 /fp:fast)
 endif()
 
-# Define the executable name ("helga") and its source and header files
-add_executable(helga 
+# --- Core Files ---
+set(HELGA_CORE_SRCS 
     src/pdf.cc
-    src/main.cc
     src/camera.cc
     src/integrator.cc
     src/scene_parser.cc
     src/rtw_stb_image.cc
+    src/post_processor.cc
     src/rtw_obj_loader.cc
     src/rtw_stb_image_write.cc
 )
-target_include_directories(helga PRIVATE include)
 
-# Find and link OpenMP to multithread the render loop
+# --- Threading ---
 find_package(OpenMP)
+set(OMP_LIB "")
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(helga PUBLIC OpenMP::OpenMP_CXX)
+    set(OMP_LIB OpenMP::OpenMP_CXX)
+endif()
+
+# ==========================================
+# Target 1: Command Line Interface (Headless)
+# ==========================================
+add_executable(helga-cli src/main_cli.cc ${HELGA_CORE_SRCS})
+target_include_directories(helga-cli PRIVATE include)
+if(OMP_LIB)
+    target_link_libraries(helga-cli PUBLIC ${OMP_LIB})
+endif()
+
+# ==========================================
+# Target 2: Graphical User Interface
+# ==========================================
+if(BUILD_GUI)
+    find_package(SDL2 REQUIRED)
+    find_package(OpenGL REQUIRED)
+    
+    file(GLOB IMGUI_SRCS "external/imgui/*.cpp" "external/imgui/backends/*.cpp")
+
+    add_executable(helga-gui src/main_gui.cc ${HELGA_CORE_SRCS} ${IMGUI_SRCS})
+    target_include_directories(helga-gui PRIVATE include external/imgui external/imgui/backends)
+    target_link_libraries(helga-gui PUBLIC ${OMP_LIB} SDL2::SDL2 OpenGL::GL)
 endif()

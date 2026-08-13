@@ -7,11 +7,15 @@ class ray {
   public:
     ray() {}
 
-    ray(const point3& origin, const vec3& direction, double time)
-      : orig(origin), dir(unit_vector(direction)), tm(time) {}
+    ray(const point3& origin, const vec3& direction, double time, bool skip_normalize = false)
+      : orig(origin), dir(direction), tm(time)
+    {
+        if (!skip_normalize && dir.length_squared() > 0.0)
+            dir = unit_vector(dir);
+    }
 
-    ray(const point3& origin, const vec3& direction)
-      : ray(origin, direction, 0) {}
+    ray(const point3& origin, const vec3& direction, bool skip_normalize = false)
+      : ray(origin, direction, 0, skip_normalize) {}
     
     const point3& origin() const { return orig; }
     const vec3& direction() const { return dir; }

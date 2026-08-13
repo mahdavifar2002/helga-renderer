@@ -224,9 +224,9 @@ bool scene_parser::load(const std::string& filename) {
         if (r.contains("post_processing")) {
             auto p = r["post_processing"];
 
-            cam.tone_mapping = p.value("tone_mapping", "reinhard");
-            cam.gamma        = p.value("gamma", 2.2);
-            cam.exposure     = p.value("exposure", 1.0);
+            processor.tone_mapping = p.value("tone_mapping", "reinhard");
+            processor.exposure     = p.value("exposure", 1.0);
+            processor.gamma        = p.value("gamma", 2.2);
         }
     }
 
@@ -261,9 +261,11 @@ bool scene_parser::load(const std::string& filename) {
                 lights->add(item_lights);
         }
     }
-    std::cerr << lights->size() << " light primitive(s) found in the scene.\n";
    
     world = hittable_list(make_shared<bvh_node>(world));
+
+    std::cerr << lights->size() << " light primitive(s) found in the scene.\n";
+    std::cerr << world.size() << " total primitive(s) found in the scene.\n";
 
     integ->world = world;
     integ->lights = lights;
@@ -290,6 +292,6 @@ void scene_parser::set_integrator(std::string integrator_type) {
     integ = new_integ;
 }
 
-void scene_parser::render_scene(const std::string& output_filename) {
-    cam.render(integ, output_filename);
+void scene_parser::render_scene(std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete) {
+    cam.render(integ, on_sample_complete);
 }

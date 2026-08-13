@@ -1,20 +1,21 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <functional>
 #include <vector>
+
+#include "external/tqdm.h"
 
 #include "sphere.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "integrator.h"
-#include "tqdm.h"
 
 class camera {
   public:
     double  aspect_ratio      = 1.0; // Ration of image width over height 
     int     image_width       = 400; // Rendered image width in pixel count
     int     samples_per_pixel = 10;  // Count of random samples for each pixel
-    double  exposure          = 1.0; // Used in tone mapping for the png result
 
     double vfov     = 90;               // Vertical view angle (field of view)
     point3 lookfrom = point3(0, 0, 0);  // Point camera is looking from
@@ -24,10 +25,8 @@ class camera {
     double defocus_angle =  0; // Variation angle of rays through each pixel
     double focus_dist    = 10; // Distance from camera lookfrom point to plane of perfect focus
 
-    std::string tone_mapping = "reinhard"; // Method for tone mapping
-    double gamma             = 2.2;        // Value for gamma correction
-
-    void render(const shared_ptr<integrator> integ, const std::string filename);
+    void render(const shared_ptr<integrator> integ,
+                std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete = nullptr);
 
   private:
     int    image_height;        // Rendered image height
@@ -48,10 +47,6 @@ class camera {
     // Constructs a camera ray originating from the origin and directed at randomly sampled
     // point around the pixel location i, j.
     ray get_ray(int i, int j) const;
-
-    // Saves the rendered image as PNG and HDR
-    void save_image(const std::vector<std::vector<color>>& image, int current_samples,
-                    const std::string filename, double time = -1);
 };
 
 #endif

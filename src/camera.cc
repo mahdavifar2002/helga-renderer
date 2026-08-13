@@ -1,5 +1,3 @@
-#include "external/stb_image_write.h"
-
 #include "rtweekend.h"
 #include "color.h"
 #include "camera.h"
@@ -47,7 +45,9 @@ void camera::initialize() {
     // Check existance of lights.
 }
 
-void camera::render(const shared_ptr<integrator> integ, const std::string filename) {
+void camera::render(const shared_ptr<integrator> integ,
+                    std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete)
+{
     std::cerr << "Rendering with '" << integ->label << "' integrator." << std::endl;
 
     initialize();
@@ -56,6 +56,7 @@ void camera::render(const shared_ptr<integrator> integ, const std::string filena
 
     int lines_completed = 0;
     tqdm bar;
+    bar.progress(0, samples_per_pixel);
 
     for (int s = 1; s <= samples_per_pixel; s++) {
         #pragma omp parallel for schedule(dynamic)
@@ -68,8 +69,8 @@ void camera::render(const shared_ptr<integrator> integ, const std::string filena
             }
         }
 
-        if (s == 1 || s == 2 || s == 5 || s % 10 == 0 || s == samples_per_pixel)
-            save_image(image, s, filename, bar.time());
+        if (on_sample_complete)
+            on_sample_complete(image, s);
         
         bar.progress(s, samples_per_pixel);
     }
@@ -93,87 +94,4 @@ ray camera::get_ray(int i, int j) const {
     auto ray_time = random_double();
 
     return ray(ray_origin, ray_direction, ray_time);
-}
-
-void camera::save_image(const std::vector<std::vector<color>>& image, int current_samples,
-                const std::string filename, double time)
-{
-    // Strip the extension off the provided filename (e.g., "image.ppm" -> "image")
-    std::string base_filename = filename;
-    size_t dot_pos = filename.find_last_of(".");
-    if (dot_pos != std::string::npos) {
-        base_filename = filename.substr(0, dot_pos);
-    }
-
-    // 1. Allocate continuous memory buffers for stb_image_write
-    // 3 components per pixel (R, G, B)
-    std::vector<float> hdr_data(image_width * image_height * 3);
-    std::vector<uint8_t> png_data(image_width * image_height * 3);
-
-    double current_scale = 1.0 / current_samples;
-    static const interval intensity(0.000, 0.999);
-
-    for (int j = 0; j < image_height; j++) {
-        for (int i = 0; i < image_width; i++) {
-            
-            // Calculate the 1D array index for this pixel
-            int index = (j * image_width + i) * 3;
-            
-            // Get the raw linear color accumulated so far
-            color pixel_color = current_scale * image[j][i];
-            double r = pixel_color.x();
-            double g = pixel_color.y();
-            double b = pixel_color.z();
-
-            // --- HDR PIPELINE (Raw, Linear, Unclamped) ---
-            hdr_data[index + 0] = static_cast<float>(r);
-            hdr_data[index + 1] = static_cast<float>(g);
-            hdr_data[index + 2] = static_cast<float>(b);
-
-            // --- PNG PIPELINE (Tone mapped, Gamma corrected, Clamped) ---
-            // 0. Camera Exposure (Driven by JSON)
-            r *= exposure;
-            g *= exposure;
-            b *= exposure;
-
-            // 1. Tone Mapping
-            if (tone_mapping == "reinhard") {
-                // Apply x2 because tone mapping darkens the image
-                r *= 2;
-                g *= 2;
-                b *= 2;
-                
-                // Hue-Preserving Reinhard Tone Mapping
-                double max_component = std::fmax(r, std::fmax(g, b));
-                double scale = 1.0 / (1.0 + max_component);
-                r *= scale;
-                g *= scale;
-                b *= scale;
-            }
-
-            // 2. Gamma Correction
-            r = linear_to_gamma(r, gamma);
-            g = linear_to_gamma(g, gamma);
-            b = linear_to_gamma(b, gamma);
-
-            // 3. Clamp and convert to bytes
-            png_data[index + 0] = static_cast<uint8_t>(256 * intensity.clamp(r));
-            png_data[index + 1] = static_cast<uint8_t>(256 * intensity.clamp(g));
-            png_data[index + 2] = static_cast<uint8_t>(256 * intensity.clamp(b));
-        }
-    }
-
-    // 2. Save the files
-    std::string hdr_filename = base_filename + ".hdr";
-    std::string png_filename = base_filename + ".png";
-
-    // Write HDR
-    if (!stbi_write_hdr(hdr_filename.c_str(), image_width, image_height, 3, hdr_data.data())) {
-        std::cerr << "Error: Could not write HDR file " << hdr_filename << "\n";
-    }
-
-    // Write PNG (Stride is width * 3 bytes)
-    if (!stbi_write_png(png_filename.c_str(), image_width, image_height, 3, png_data.data(), image_width * 3)) {
-        std::cerr << "Error: Could not write PNG file " << png_filename << "\n";
-    }
 }

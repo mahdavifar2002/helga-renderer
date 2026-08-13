@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[]) {
     std::string scene_file = "scene.json";
-    std::string output_file = "image.ppm";
+    std::string output_file = "render.png";
     std::string integrator_type = "";
     int samples = 0;
     int width = 0;
@@ -35,9 +35,15 @@ int main(int argc, char* argv[]) {
     if (samples) parser.set_samples_per_pixel(samples);
     if (width) parser.set_width(width);
     if (!integrator_type.empty()) parser.set_integrator(integrator_type);
-
+    
+    // Callback function to save the rendered image progressively
+    auto callback = [&parser, &output_file](const std::vector<std::vector<color>>& buffer, int sample_count) {
+        if (sample_count == 1 || sample_count == 2 || sample_count == 5 || sample_count % 10 == 0 || sample_count == parser.get_camera().samples_per_pixel)
+            parser.get_post_processor().save_image(buffer, sample_count, output_file);
+    };
+    
     // Render the scene
-    parser.render_scene(output_file);
+    parser.render_scene(callback);
 
     return 0;
 }
