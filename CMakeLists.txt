@@ -84,5 +84,5 @@ if(BUILD_GUI)
         include/external/imgui/backends
         "${CMAKE_CURRENT_BINARY_DIR}/generated"
     )
-    target_link_libraries(helga-gui PUBLIC ${OMP_LIB} SDL2::SDL2 OpenGL::GL)
+    target_link_libraries(helga-gui PUBLIC ${OMP_LIB} SDL2::SDL2 SDL2::SDL2main OpenGL::GL)
 endif()
