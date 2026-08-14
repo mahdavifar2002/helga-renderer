@@ -170,7 +170,7 @@ class tqdm {
                     }
                 }
                 for (int i = 0; i < ifills; i++) std::cerr << bars[8];
-                if (!in_screen and (curr != tot)) fprintf(stderr, "%s",bars[(int)(8.0*(fills-ifills))]);
+                if (!in_screen && (curr != tot)) fprintf(stderr, "%s",bars[(int)(8.0*(fills-ifills))]);
                 for (int i = 0; i < width-ifills-1; i++) std::cerr << bars[0];
                 fprintf(stderr, "%s ", right_pad.c_str());
                 if (use_colors) fprintf(stderr, "\033[1m\033[31m");
