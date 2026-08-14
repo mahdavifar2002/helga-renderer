@@ -6,11 +6,32 @@
 #include <string>
 #include <cstdint>
 
+const color post_processor::process_pixel(color pixel) const {
+        // 0. Camera Exposure (Driven by JSON)
+        pixel *= exposure;
+
+        // 1. Tone Mapping
+        if (tone_mapping == "reinhard") {
+            // Apply x2 because tone mapping darkens the image
+            pixel *= 2;
+            
+            // Hue-Preserving Reinhard Tone Mapping
+            double max_component = std::fmax(pixel.x(), std::fmax(pixel.y(), pixel.z()));
+            double scale = 1.0 / (1.0 + max_component);
+            pixel *= scale;
+        }
+
+        // 2. Gamma Correction
+        pixel = linear_to_gamma(pixel, gamma);
+
+        return pixel;
+}
+
 void post_processor::save_image(const std::vector<std::vector<color>>& image,
                                 int current_samples,
                                 const std::string filename) const
 {
-    // Strip the extension off the provided filename (e.g., "render.png" -> "render")
+    // Strip the extension off the provided filename (e.g., "filename.png" -> "filename")
     std::string base_filename = filename;
     size_t dot_pos = filename.find_last_of(".");
     if (dot_pos != std::string::npos) {
@@ -45,33 +66,14 @@ void post_processor::save_image(const std::vector<std::vector<color>>& image,
             hdr_data[index + 1] = static_cast<float>(g);
             hdr_data[index + 2] = static_cast<float>(b);
 
-            // --- PNG PIPELINE (Tone mapped, Gamma corrected, Clamped) ---
-            // 0. Camera Exposure (Driven by JSON)
-            r *= exposure;
-            g *= exposure;
-            b *= exposure;
+            // --- PNG PIPELINE (Exposure, Tone mapped, Gamma corrected, Clamped) ---
+            
+            color processed_pixel = process_pixel(pixel_color);
 
-            // 1. Tone Mapping
-            if (tone_mapping == "reinhard") {
-                // Apply x2 because tone mapping darkens the image
-                r *= 2;
-                g *= 2;
-                b *= 2;
-                
-                // Hue-Preserving Reinhard Tone Mapping
-                double max_component = std::fmax(r, std::fmax(g, b));
-                double scale = 1.0 / (1.0 + max_component);
-                r *= scale;
-                g *= scale;
-                b *= scale;
-            }
+            r = processed_pixel.x();
+            g = processed_pixel.y();
+            b = processed_pixel.z();
 
-            // 2. Gamma Correction
-            r = linear_to_gamma(r, gamma);
-            g = linear_to_gamma(g, gamma);
-            b = linear_to_gamma(b, gamma);
-
-            // 3. Clamp and convert to bytes
             png_data[index + 0] = static_cast<uint8_t>(256 * intensity.clamp(r));
             png_data[index + 1] = static_cast<uint8_t>(256 * intensity.clamp(g));
             png_data[index + 2] = static_cast<uint8_t>(256 * intensity.clamp(b));

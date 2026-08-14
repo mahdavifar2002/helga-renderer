@@ -9,11 +9,15 @@
 
 using color = vec3;
 
-inline double linear_to_gamma(double linear_component, double gamma) {
+inline double linear_to_gamma(const double linear_component, const double gamma) {
     if (linear_component > 0)
         return std::pow(linear_component, 1.0 / gamma);
     
     return 0;
+}
+
+inline color linear_to_gamma(const color& c, const double gamma) {
+    return color(linear_to_gamma(c.x(), gamma), linear_to_gamma(c.y(), gamma), linear_to_gamma(c.z(), gamma));
 }
 
 inline void write_color(std::ostream& out, const color& pixel_color) {

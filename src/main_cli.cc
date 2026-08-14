@@ -3,8 +3,8 @@
 #include <string>
 
 int main(int argc, char* argv[]) {
-    std::string scene_file = "scene.json";
-    std::string output_file = "render.png";
+    std::string scene_file = "";
+    std::string output_file = helga_defaults::output_file;
     std::string integrator_type = "";
     int samples = 0;
     int width = 0;

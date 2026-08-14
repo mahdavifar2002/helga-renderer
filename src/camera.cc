@@ -2,9 +2,6 @@
 #include "color.h"
 #include "camera.h"
 
-#include <vector>
-#include <string>
-
 void camera::initialize() {
     // Calculate the image height, and ensure that it's at least 1.
     image_height = int (image_width / aspect_ratio);
@@ -46,7 +43,8 @@ void camera::initialize() {
 }
 
 void camera::render(const shared_ptr<integrator> integ,
-                    std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete)
+                    std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete,
+                    std::atomic<bool>* cancel_flag)
 {
     std::cerr << "Rendering with '" << integ->label << "' integrator." << std::endl;
 
@@ -58,15 +56,25 @@ void camera::render(const shared_ptr<integrator> integ,
     tqdm bar;
     bar.progress(0, samples_per_pixel);
 
+    bool finished = true;
+
     for (int s = 1; s <= samples_per_pixel; s++) {
         #pragma omp parallel for schedule(dynamic)
         for (int j = 0; j < image_height; j++) {
-            auto pixel_color = color(0, 0, 0);
+            if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) {
+                continue;
+            }
 
             for (int i = 0; i < image_width; i++) {
                 ray r = get_ray(i, j);
                 image[j][i] += integ->ray_color(r);
             }
+        }
+
+        if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) {
+            std::cerr << "\nRender halted by user.\n";
+            finished = false;
+            break;
         }
 
         if (on_sample_complete)
@@ -75,7 +83,10 @@ void camera::render(const shared_ptr<integrator> integ,
         bar.progress(s, samples_per_pixel);
     }
 
-    bar.finish();
+    if (finished) {
+        bar.finish();
+        std::cerr << "\nRender finished succesfully.\n";
+    }
 }
 
 vec3 camera::defocus_disk_sample() const {

@@ -2,6 +2,7 @@
 #define INTEGRATOR_H
 
 #include "rtweekend.h"
+#include "default_settings.h"
 #include "hittable_list.h"
 #include "texture.h"
 
@@ -12,7 +13,7 @@ class integrator {
     virtual color ray_color(const ray& r) const = 0;
     
     std::string label;
-    int max_depth = 6;
+    int max_depth = helga_defaults::max_depth;
     hittable_list world;
     shared_ptr<texture> background;
     shared_ptr<hittable_list> lights;

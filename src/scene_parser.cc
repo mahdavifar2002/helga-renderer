@@ -1,4 +1,5 @@
 #include "rtweekend.h"
+#include "default_settings.h"
 #include "scene_parser.h"
 #include "sphere.h"
 #include "bvh.h"
@@ -181,80 +182,91 @@ namespace {
 
 // --- Class Implementation ---
 
-scene_parser::scene_parser(const std::string& filename) : filename(filename) {}
+scene_parser::scene_parser(const nlohmann::json& scene_data) {
+    scene_config = scene_data;
+}
 
-bool scene_parser::parse() {
+scene_parser::scene_parser(const std::string& filename) {
     auto scene_dir = getenv("RTW_SCENES");
 
     // Hunt for the scene file in some likely locations.
-    if (scene_dir && load(std::string(scene_dir) + "/" + filename)) return true;
-    if (load(filename)) return true;
-    if (load("scenes/" + filename)) return true;
-    if (load("../scenes/" + filename)) return true;
-    if (load("../../scenes/" + filename)) return true;
-    if (load("../../../scenes/" + filename)) return true;
-    if (load("../../../../scenes/" + filename)) return true;
-    if (load("../../../../../scenes/" + filename)) return true;
-    if (load("../../../../../../scenes/" + filename)) return true;
+    if (scene_dir && load(std::string(scene_dir) + "/" + filename)) return;
+    if (load(filename)) return;
+    if (load("scenes/" + filename)) return;
+    if (load("../scenes/" + filename)) return;
+    if (load("../../scenes/" + filename)) return;
+    if (load("../../../scenes/" + filename)) return;
+    if (load("../../../../scenes/" + filename)) return;
+    if (load("../../../../../scenes/" + filename)) return;
+    if (load("../../../../../../scenes/" + filename)) return;
 
     std::cerr << "ERROR: Could not open scene file: '" << filename << "'.\n";
-
-    return false;
 }
 
-bool scene_parser::load(const std::string& filename) {
-    std::ifstream file(filename);
-    if (!file.is_open()) {
+bool scene_parser::load(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) return false;
+    
+    try {
+        file >> scene_config;
+        scene_filepath = path;
+
+        // Extract parent directory path (e.g., "scenes/bedroom.json" -> "scenes")
+        std::filesystem::path p(path);
+        scene_dir_path = p.parent_path().string();
+        if (scene_dir_path.empty()) scene_dir_path = ".";
+
+        return true;
+    } catch (...) {
         return false;
     }
-   
-    // Load JSON locally inside the function!
-    json scene_data;
-    file >> scene_data;
+}
 
+void scene_parser::parse() {
     // 1. Parse Render Parameters
-    if (scene_data.contains("render")) {
-        auto r = scene_data["render"];
-        integ = parse_integrator(r.value("integrator", "mis_nee"));
-        cam.image_width       = r.value("image_width", 400);
-        cam.samples_per_pixel = r.value("samples_per_pixel", 10);
-        integ->max_depth      = r.value("max_depth", 6);
+    if (scene_config.contains("render")) {
+        auto r = scene_config["render"];
+        integ = parse_integrator(r.value("integrator", helga_defaults::integrator));
+        cam.image_width       = r.value("image_width", helga_defaults::image_width);
+        cam.samples_per_pixel = r.value("samples_per_pixel", helga_defaults::samples_per_pixel);
+        integ->max_depth      = r.value("max_depth", helga_defaults::max_depth);
 
         // 1.2. Parse Post-Processing Parameters
         if (r.contains("post_processing")) {
             auto p = r["post_processing"];
 
-            processor.tone_mapping = p.value("tone_mapping", "reinhard");
-            processor.exposure     = p.value("exposure", 1.0);
-            processor.gamma        = p.value("gamma", 2.2);
+            processor.tone_mapping = p.value("tone_mapping", helga_defaults::tone_mapping);
+            processor.exposure     = p.value("exposure", helga_defaults::exposure);
+            processor.gamma        = p.value("gamma", helga_defaults::gamma);
         }
     }
 
     // 2. Parse Camera
-    if (scene_data.contains("camera")) {
-        auto c = scene_data["camera"];
-        cam.aspect_ratio = c.value("aspect_ratio", 1.0);
-        cam.vfov         = c.value("vfov", 90.0);
+    if (scene_config.contains("camera")) {
+        auto c = scene_config["camera"];
+        cam.aspect_ratio = c.value("aspect_ratio", helga_defaults::aspect_ratio);
+        cam.vfov         = c.value("vfov", helga_defaults::vfov);
        
         if (c.contains("lookfrom")) cam.lookfrom = parse_vec3(c["lookfrom"]);
         if (c.contains("lookat"))   cam.lookat = parse_vec3(c["lookat"]);
         if (c.contains("vup"))      cam.vup = parse_vec3(c["vup"]);
        
-        cam.defocus_angle = c.value("defocus_angle", 0.0);
-        cam.focus_dist    = c.value("focus_dist", 10.0);
+        cam.defocus_angle = c.value("defocus_angle", helga_defaults::defocus_angle);
+        cam.focus_dist    = c.value("focus_dist", helga_defaults::focus_dist);
     }
+    cam.initialize();
 
     // 3. Parse Background Texture
-    if (scene_data.contains("background")) {
-        background = parse_texture(scene_data["background"]);
+    if (scene_config.contains("background")) {
+        background = parse_texture(scene_config["background"]);
     } else {
         background = make_shared<solid_color>(color(0,0,0));
     }
 
     // 4. Parse World and Extract Lights
     lights = make_shared<hittable_list>();
-    if (scene_data.contains("world")) {
-        for (const auto& item : scene_data["world"]) {
+    if (scene_config.contains("world")) {
+        for (const auto& item : scene_config["world"]) {
             shared_ptr<hittable> item_lights;
             world.add(parse_hittable(item, item_lights)); // Calls the anonymous namespace function
             if (item_lights != nullptr)
@@ -270,15 +282,16 @@ bool scene_parser::load(const std::string& filename) {
     integ->world = world;
     integ->lights = lights;
     integ->background = background;
-    return true;
 }
 
 void scene_parser::set_samples_per_pixel(int samples) {
     cam.samples_per_pixel = samples;
+    cam.initialize();
 }
 
 void scene_parser::set_width(int width) {
     cam.image_width = width;
+    cam.initialize();
 }
 
 void scene_parser::set_integrator(std::string integrator_type) {
@@ -292,6 +305,7 @@ void scene_parser::set_integrator(std::string integrator_type) {
     integ = new_integ;
 }
 
-void scene_parser::render_scene(std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete) {
-    cam.render(integ, on_sample_complete);
+void scene_parser::render_scene(std::function<void(const std::vector<std::vector<color>>&, int)> on_sample_complete,
+                                std::atomic<bool>* cancel_flag) {
+    cam.render(integ, on_sample_complete, cancel_flag);
 }
