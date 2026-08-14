@@ -1,0 +1,53 @@
+name: Build Release Binaries
+
+on:
+  # 1. Trigger when you push a version tag (e.g., git tag v1.0.0 && git push origin v1.0.0)
+  push:
+    tags:
+      - 'v*'
+  # 2. Provide a manual "Run workflow" button in the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libsdl2-dev libomp-dev ccache
+
+    - name: Install Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install sdl2 libomp ccache
+
+    - name: Install Dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: vcpkg install sdl2:x64-windows
+
+    - name: Configure CMake
+      # Using our new, clean preset name
+      run: cmake --preset release 
+      env:
+        CMAKE_TOOLCHAIN_FILE: ${{ runner.os == 'Windows' && 'C:/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
+
+    - name: Build
+      run: cmake --build build/release --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: helga-${{ matrix.os }}
+        path: |
+          build/release/helga-gui*
+          build/release/Release/helga-gui.exe
+          build/release/helga-cli*
+          build/release/Release/helga-cli.exe

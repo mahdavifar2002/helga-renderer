@@ -1,0 +1,6 @@
+#ifndef HELGA_VERSION_H
+#define HELGA_VERSION_H
+
+#define HELGA_VERSION "@PROJECT_VERSION@"
+
+#endif

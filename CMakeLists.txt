@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.15)
-project(helga VERSION 0.1)
+project(helga VERSION 0.1.0)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Generate the version header
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/helga_version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/helga_version.h"
+    @ONLY
+)
 
 # Enable ccache for faster builds
 find_program(CCACHE_PROGRAM ccache)
@@ -23,7 +32,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     endif()
     add_compile_options(${OPT_FLAGS})
 elseif(MSVC)
-    add_compile_options(/O2 /fp:fast)
+    add_compile_options(/O2 /fp:fast /openmp:llvm)
 endif()
 
 # --- Core Files ---
@@ -49,7 +58,11 @@ endif()
 # Target 1: Command Line Interface (Headless)
 # ==========================================
 add_executable(helga-cli src/main_cli.cc ${HELGA_CORE_SRCS})
-target_include_directories(helga-cli PRIVATE include)
+target_include_directories(helga-cli PRIVATE
+    include
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
+)
+
 if(OMP_LIB)
     target_link_libraries(helga-cli PUBLIC ${OMP_LIB})
 endif()
@@ -64,6 +77,12 @@ if(BUILD_GUI)
     file(GLOB IMGUI_SRCS "include/external/imgui/*.cpp" "include/external/imgui/backends/*.cpp")
 
     add_executable(helga-gui src/main_gui.cc ${HELGA_CORE_SRCS} ${IMGUI_SRCS})
-    target_include_directories(helga-gui PRIVATE include include/external/imgui include/external/imgui/backends)
+    target_compile_definitions(helga-gui PRIVATE HELGA_VERSION="${PROJECT_VERSION}")
+    target_include_directories(helga-gui PRIVATE
+        include
+        include/external/imgui
+        include/external/imgui/backends
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+    )
     target_link_libraries(helga-gui PUBLIC ${OMP_LIB} SDL2::SDL2 OpenGL::GL)
 endif()
