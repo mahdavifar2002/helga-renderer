@@ -1,10 +1,12 @@
 #include "scene_parser.h"
+#include "external/stb_image.h"
 #include "external/json.hpp"
 #include "external/portable-file-dialogs.h"
 #include "external/imgui/imgui.h"
 #include "external/imgui/backends/imgui_impl_sdl2.h"
 #include "external/imgui/backends/imgui_impl_opengl3.h"
 #include "embedded_font.h"
+#include "helga_icon.h"
 #include "default_settings.h"
 #include "helga_version.h"
 #include <SDL2/SDL.h>
@@ -64,6 +66,28 @@ int main(int argc, char* argv[]) {
     std::string window_title = std::string("Helga Renderer v") + HELGA_VERSION;
     SDL_Window* window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     SDL_MaximizeWindow(window);
+
+    // Load Icon from Compiled Memory
+    int icon_width, icon_height, icon_channels;
+
+    unsigned char* icon_pixels = stbi_load_from_memory(
+        helga_icon_png,
+        helga_icon_png_len,
+        &icon_width, &icon_height, &icon_channels, 4
+    );
+
+    if (icon_pixels) {
+        SDL_Surface* icon_surface = SDL_CreateRGBSurfaceWithFormatFrom(
+            icon_pixels, icon_width, icon_height, 32, 4 * icon_width, SDL_PIXELFORMAT_RGBA32
+        );
+        
+        SDL_SetWindowIcon(window, icon_surface);
+        
+        SDL_FreeSurface(icon_surface);
+        stbi_image_free(icon_pixels);
+    } else {
+        std::cerr << "Warning: Could not load application icon.\n";
+    }
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
