@@ -37,10 +37,9 @@ jobs:
       run: vcpkg install sdl2:x64-windows-static
 
     - name: Configure CMake
-      run: cmake --preset release
+      run: cmake --preset release ${{ runner.os == 'Windows' && '-DVCPKG_TARGET_TRIPLET=x64-windows-static' || '' }}
       env:
         CMAKE_TOOLCHAIN_FILE: ${{ runner.os == 'Windows' && 'C:/vcpkg/scripts/buildsystems/vcpkg.cmake' || '' }}
-        VCPKG_TARGET_TRIPLET: ${{ runner.os == 'Windows' && 'x64-windows-static' || '' }}
 
     - name: Build
       run: cmake --build build/release --config Release
