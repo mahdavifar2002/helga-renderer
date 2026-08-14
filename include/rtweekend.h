@@ -26,9 +26,9 @@ inline double degrees_to_radians(double degrees) {
 
 // Returns a random real in [0, 1)
 inline double random_double() {
-    // Use thread_local so each OpenMP thread gets its own independent generator
     thread_local std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    thread_local std::mt19937 generator;
+    // Seed the generator with unique hardware entropy upon thread creation
+    thread_local std::mt19937 generator(std::random_device{}());
     return distribution(generator);
 }
 

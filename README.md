@@ -6,7 +6,6 @@ Helga is a physically-based ray tracer written in C++. This project is based on 
 To build and run this project, you will need a Linux environment with the following installed:
 * A modern C++ compiler (GCC or Clang)
 * CMake (Version 3.10 or higher)
-* OpenMP (usually bundled with GCC)
 
 ## Build Instructions
 

@@ -24,13 +24,13 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsdl2-dev libomp-dev ccache
+        sudo apt-get install -y libsdl2-dev ccache
 
     - name: Install Dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
         brew untap aws/tap || true
-        brew install sdl2 libomp ccache
+        brew install sdl2 ccache
 
     - name: Install Dependencies (Windows)
       if: runner.os == 'Windows'

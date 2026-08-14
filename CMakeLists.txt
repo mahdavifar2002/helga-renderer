@@ -33,7 +33,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(${OPT_FLAGS})
 elseif(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/O2 /fp:fast /openmp:llvm)
+    add_compile_options(/O2 /fp:fast)
 endif()
 
 # --- Core Files ---
@@ -48,13 +48,6 @@ set(HELGA_CORE_SRCS
     src/rtw_stb_image_write.cc
 )
 
-# --- Threading ---
-find_package(OpenMP)
-set(OMP_LIB "")
-if(OpenMP_CXX_FOUND)
-    set(OMP_LIB OpenMP::OpenMP_CXX)
-endif()
-
 # ==========================================
 # Target 1: Command Line Interface (Headless)
 # ==========================================
@@ -64,9 +57,7 @@ target_include_directories(helga-cli PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/generated"
 )
 
-if(OMP_LIB)
-    target_link_libraries(helga-cli PUBLIC ${OMP_LIB})
-endif()
+target_link_libraries(helga-cli PUBLIC)
 
 # ==========================================
 # Target 2: Graphical User Interface
@@ -89,5 +80,5 @@ if(BUILD_GUI)
         include/external/imgui/backends
         "${CMAKE_CURRENT_BINARY_DIR}/generated"
     )
-    target_link_libraries(helga-gui PUBLIC ${OMP_LIB} SDL2::SDL2 SDL2::SDL2main OpenGL::GL)
+    target_link_libraries(helga-gui PUBLIC SDL2::SDL2 SDL2::SDL2main OpenGL::GL)
 endif()

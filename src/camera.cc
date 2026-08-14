@@ -1,6 +1,8 @@
 #include "rtweekend.h"
 #include "color.h"
 #include "camera.h"
+#include <atomic>
+#include <thread>
 
 void camera::initialize() {
     // Calculate the image height, and ensure that it's at least 1.
@@ -58,17 +60,40 @@ void camera::render(const shared_ptr<integrator> integ,
 
     bool finished = true;
 
-    for (int s = 1; s <= samples_per_pixel; s++) {
-        #pragma omp parallel for schedule(dynamic)
-        for (int j = 0; j < image_height; j++) {
-            if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) {
-                continue;
-            }
+    // Get the number of available CPU cores
+    unsigned int num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) num_threads = 4; // Safe fallback
 
-            for (int i = 0; i < image_width; i++) {
-                ray r = get_ray(i, j);
-                image[j][i] += integ->ray_color(r);
-            }
+    for (int s = 1; s <= samples_per_pixel; s++) {
+        
+        // Shared atomic counter
+        std::atomic<int> next_row{0};
+        std::vector<std::thread> threads;
+
+        // Launch worker threads
+        for (unsigned int t = 0; t < num_threads; ++t) {
+            threads.emplace_back([&]() {
+                while (true) {
+                    // Atomically grab the next available row index
+                    int j = next_row.fetch_add(1, std::memory_order_relaxed);
+                    
+                    if (j >= image_height) break;
+
+                    if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) {
+                        break; 
+                    }
+
+                    for (int i = 0; i < image_width; i++) {
+                        ray r = get_ray(i, j);
+                        image[j][i] += integ->ray_color(r);
+                    }
+                }
+            });
+        }
+
+        // Wait for all threads to finish processing this sample
+        for (auto& th : threads) {
+            th.join();
         }
 
         if (cancel_flag && cancel_flag->load(std::memory_order_relaxed)) {
