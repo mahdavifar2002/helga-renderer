@@ -1,6 +1,11 @@
 #ifndef TQDM_H
 #define TQDM_H
-#include <unistd.h>
+#if defined(_WIN32)
+    #include <io.h>
+    #define isatty _isatty 
+#else
+    #include <unistd.h>
+#endif
 #include <chrono>
 #include <ctime>
 #include <numeric>
