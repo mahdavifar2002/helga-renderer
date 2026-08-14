@@ -76,8 +76,12 @@ if(BUILD_GUI)
     find_package(OpenGL REQUIRED)
     
     file(GLOB IMGUI_SRCS "include/external/imgui/*.cpp" "include/external/imgui/backends/*.cpp")
+    set(GUI_SRCS src/main_gui.cc ${HELGA_CORE_SRCS} ${IMGUI_SRCS})
+    if(WIN32)
+        list(APPEND GUI_SRCS "assets/helga.rc")
+    endif()
+    add_executable(helga-gui ${GUI_SRCS})
 
-    add_executable(helga-gui src/main_gui.cc ${HELGA_CORE_SRCS} ${IMGUI_SRCS})
     target_compile_definitions(helga-gui PRIVATE HELGA_VERSION="${PROJECT_VERSION}")
     target_include_directories(helga-gui PRIVATE
         include
