@@ -154,20 +154,9 @@ int main(int argc, char* argv[]) {
             }
         };
 
-        // Execute the hunting chain
-        auto scene_dir = getenv("RTW_SCENES");
-
-        if (scene_dir && try_load(std::string(scene_dir) + "/" + input_filename)) return;
         if (try_load(input_filename)) return;
-        if (try_load("scenes/" + input_filename)) return;
-        if (try_load("../scenes/" + input_filename)) return;
-        if (try_load("../../scenes/" + input_filename)) return;
-        if (try_load("../../../scenes/" + input_filename)) return;
-        if (try_load("../../../../scenes/" + input_filename)) return;
-        if (try_load("../../../../../scenes/" + input_filename)) return;
-        if (try_load("../../../../../../scenes/" + input_filename)) return;
 
-        std::cerr << "ERROR: Could not open or find scene file: '" << input_filename << "'.\n";
+        std::cerr << "ERROR: Could not load scene file: '" << input_filename << "'.\n";
         scene_load_error = "File not found: " + input_filename;
         snprintf(scene_filepath, sizeof(scene_filepath), "%s", last_valid_scene_path.c_str());
     };
@@ -355,8 +344,10 @@ int main(int argc, char* argv[]) {
                 if (render_thread.joinable()) render_thread.join();
 
                 // Launch the render on a background thread
-                render_thread = std::thread([scene_data = active_scene_json, out_file = std::string(output_filepath)]() {
-                    scene_parser parser(scene_data);
+                render_thread = std::thread([scene_data = active_scene_json,
+                                             scene_dir = last_open_dir,
+                                             out_file = std::string(output_filepath)]() {
+                    scene_parser parser(scene_data, scene_dir);
                     parser.parse();
 
                     render_width = parser.get_camera().image_width;

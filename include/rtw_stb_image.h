@@ -8,28 +8,11 @@ class rtw_image {
   public:
     rtw_image() {}
     
-    // Loads image data from the specified file. If the RTW_IMAGES environment variable is
-    // defined, looks only in that directory for the image file. If the image was not found,
-    // searches for the specified image file first from the current directory, then in the
-    // images/ subdirectory, then the _parent's_ images/ subdirectory, and then _that_
-    // parent, and so on, for six levels up. If the image was not loaded successfully,
-    // width() and height() will return 0. 
+    // Loads image data from the specified file.
     rtw_image(const char* image_filename) {
-        auto filename = std::string(image_filename);
-        auto image_dir = getenv("RTW_IMAGES");
-
-        // Hunt for the image file in some likely locations.
-        if (image_dir && load(std::string(image_dir) + "/" + image_filename)) return;
-        if (load(filename)) return;
-        if (load("images/" + filename)) return;
-        if (load("../images/" + filename)) return;
-        if (load("../../images/" + filename)) return;
-        if (load("../../../images/" + filename)) return;
-        if (load("../../../../images/" + filename)) return;
-        if (load("../../../../../images/" + filename)) return;
-        if (load("../../../../../../images/" + filename)) return;
-
-        std::cerr << "ERROR: Could not load image file: '" << image_filename << "'.\n";
+        if (!load(image_filename)) {
+            std::cerr << "ERROR: Could not load image file: '" << image_filename << "'.\n";
+        }
     }
     
     // Implementation in the `rtw_stb_image.cc`

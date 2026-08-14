@@ -4,6 +4,8 @@
 #include "rtweekend.h"
 #include "rtw_obj_loader.h"
 
+#include <filesystem>
+
 inline shared_ptr<material> translate_mtl(const tinyobj::material_t& mtl, const std::string& base_dir) {
     const double EPSILON = 1e-5; // 0.00001
 
@@ -36,12 +38,8 @@ inline shared_ptr<material> translate_mtl(const tinyobj::material_t& mtl, const 
 
     // 4. Default to Lambertian (Diffuse)
     if (!mtl.diffuse_texname.empty()) {
-        // It has a texture! Append the base directory to the filename.
-        std::string tex_path = base_dir + mtl.diffuse_texname;
-        
-        // Note: You might want to handle Windows '\' vs Linux '/' path separators 
-        // depending on how your OBJ exporter formatted 'diffuse_texname'
-        return make_shared<lambertian>(make_shared<image_texture>(tex_path.c_str()));
+        std::filesystem::path tex_path = std::filesystem::path(base_dir) / mtl.diffuse_texname;
+        return make_shared<lambertian>(make_shared<image_texture>(tex_path.string().c_str()));
     } else {
         // No texture, just a solid color
         color albedo(mtl.diffuse[0], mtl.diffuse[1], mtl.diffuse[2]);
@@ -56,7 +54,9 @@ bool rtw_obj::load(const std::string& model_dir, const std::string& filename) {
 
     tinyobj::ObjReader reader;
 
-    if (!reader.ParseFromFile(model_dir + filename, reader_config)) {
+    std::filesystem::path full_obj_path = std::filesystem::path(model_dir) / filename;
+
+    if (!reader.ParseFromFile(full_obj_path.string(), reader_config)) {
         // if (!reader.Error().empty()) std::cerr << "TinyObjReader: " << reader.Error();
         return false;
     }

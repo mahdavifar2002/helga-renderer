@@ -2,6 +2,7 @@
 #define QUAD_H
 
 #include <iostream>
+#include <filesystem>
 
 #include "hittable.h"
 #include "hittable_list.h"
@@ -193,19 +194,9 @@ class tri : public quad {
     double uv[3][2];
 };
 
-// Helper to extract directory from a full filepath (e.g., "models/bunny/file.obj" -> "models/bunny/")
-inline std::string get_base_dir(const std::string& filepath) {
-    size_t pos = filepath.find_last_of("/\\");
-    if (pos != std::string::npos) return filepath.substr(0, pos + 1);
-    return "";
-}
-
 inline shared_ptr<bvh_node> mesh(const char* filepath, shared_ptr<hittable>& lights, shared_ptr<material> override_mat = nullptr, double scale = 1) {
-    std::string path_str(filepath);
-    std::string base_dir = get_base_dir(path_str);
-    std::string filename = path_str.substr(base_dir.length());
+    auto obj = rtw_obj(filepath);
 
-    auto obj = rtw_obj(base_dir, filename);
     hittable_list faces_list;
     hittable_list lights_list;
     
@@ -231,7 +222,7 @@ inline shared_ptr<bvh_node> mesh(const char* filepath, shared_ptr<hittable>& lig
             lights_list.add(t);
     }
 
-    std::cerr << "> Object '" << filename << "' loaded into the scene with " << obj.faces.size() << " triangles.\n";
+    std::cerr << "> Object '" << filepath << "' loaded into the scene with " << obj.faces.size() << " triangles.\n";
     std::cerr << "> Bounding box: " << faces_list.bounding_box() << "\n";
 
     if (!lights_list.objects.empty())

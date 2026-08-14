@@ -11,7 +11,8 @@
 
 class scene_parser {
   public:
-    scene_parser(const nlohmann::json& scene_data);
+    scene_parser(const nlohmann::json& scene_data, const std::string& scene_dir = ".")
+      : scene_config(scene_data), scene_dir_path(scene_dir.empty() ? "." : scene_dir) {}
     scene_parser(const std::string& filename);
 
 
@@ -33,7 +34,7 @@ class scene_parser {
   private:
     nlohmann::json scene_config;
     std::string scene_filepath;
-    std::string scene_dir_path;
+    std::string scene_dir_path = ".";
     
     camera cam;
     post_processor processor;
@@ -41,6 +42,13 @@ class scene_parser {
     hittable_list world;
     shared_ptr<hittable_list> lights;
     shared_ptr<texture> background = make_shared<solid_color>(color(0, 0, 0));
+
+    vec3 parse_vec3(const nlohmann::json& j);
+    color parse_color(const nlohmann::json& j);
+    shared_ptr<texture> parse_texture(const nlohmann::json& j);
+    shared_ptr<material> parse_material(const nlohmann::json& j);
+    shared_ptr<hittable> parse_hittable(const nlohmann::json& j, shared_ptr<hittable>& lights);
+    shared_ptr<integrator> parse_integrator(const std::string& value);
 };
 
 #endif

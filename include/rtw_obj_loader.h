@@ -2,6 +2,7 @@
 #define RTW_OBJ_LOADER_H
 
 #include <iostream>
+#include <filesystem>
 
 #include "material.h"
 
@@ -21,26 +22,17 @@ class rtw_obj {
 
     rtw_obj() {}
 
-    // Loads obj data from the specified file. If the RTW_MODELS environment variable is
-    // defined, looks only in that directory for the obj file. If the model was not found,
-    // searches for the specified obj file first from the current directory, then in the
-    // models/ subdirectory, then the _parent's_ models/ subdirectory, and then _that_
-    // parent, and so on, for six levels up.
-    rtw_obj(const std::string& directory, const std::string& filename) {
-        auto model_dir = getenv("RTW_MODELS");
+    // Loads obj data from the specified file.
+    rtw_obj(const std::string& filepath) {
+        std::filesystem::path path_obj(filepath);
+        
+        // Extract parent directory and filename natively
+        std::string model_dir = path_obj.parent_path().string();
+        std::string filename = path_obj.filename().string();
 
-        // Hunt for the model file in some likely locations.
-        if (model_dir && load(std::string(model_dir) + directory, filename)) return;
-        if (load(directory, filename)) return;
-        if (load("models/" + directory, filename)) return;
-        if (load("../models/" + directory, filename)) return;
-        if (load("../../models/" + directory, filename)) return;
-        if (load("../../../models/" + directory, filename)) return;
-        if (load("../../../../models/" + directory, filename)) return;
-        if (load("../../../../../models/" + directory, filename)) return;
-        if (load("../../../../../../models/" + directory, filename)) return;
-
-        std::cerr << "ERROR: Could not load obj file: '" << directory + filename << "'.\n";
+        if (!load(model_dir, filename)) {
+            std::cerr << "ERROR: Could not load obj file: '" << filepath << "'.\n";
+        }
     }
 
     // Implementation in the `rtw_obj_loader.cc`
