@@ -85,7 +85,7 @@ void camera::render(const shared_ptr<integrator> integ,
 
     if (finished) {
         bar.finish();
-        std::cerr << "\nRender finished succesfully.\n";
+        std::cerr << "Render completed successfully. Time elapsed: " << bar.time() << "\n";
     }
 }
 

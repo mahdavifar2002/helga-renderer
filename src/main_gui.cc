@@ -8,7 +8,7 @@
 #include "default_settings.h"
 #include "helga_version.h"
 #include <SDL2/SDL.h>
-#include <GL/gl.h>
+#include <SDL_opengl.h>
 #include <thread>
 #include <mutex>
 #include <vector>

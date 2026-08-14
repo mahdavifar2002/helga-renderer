@@ -26,7 +26,7 @@ option(USE_NATIVE_ARCH "Optimize for current CPU (Disable when distributing bina
 
 # Force aggressive optimization and architecture-specific instructions
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set(OPT_FLAGS "-O3" "-ffast-math")
+    set(OPT_FLAGS "-O3" "-ffast-math" "-fno-finite-math-only")
     if(USE_NATIVE_ARCH)
         list(APPEND OPT_FLAGS "-march=native")
     endif()
