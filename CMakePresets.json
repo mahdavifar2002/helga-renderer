@@ -1,0 +1,25 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "dist-gui",
+      "displayName": "Distribution GUI Build",
+      "binaryDir": "${sourceDir}/build/dist-gui",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_GUI": "ON",
+        "USE_NATIVE_ARCH": "OFF"
+      }
+    },
+    {
+      "name": "dist-cli",
+      "displayName": "Distribution CLI Build",
+      "binaryDir": "${sourceDir}/build/dist-cli",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_GUI": "OFF",
+        "USE_NATIVE_ARCH": "OFF"
+      }
+    }
+  ]
+}

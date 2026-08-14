@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 project(helga VERSION 0.1)
 
 # Enable ccache for faster builds
@@ -61,9 +61,9 @@ if(BUILD_GUI)
     find_package(SDL2 REQUIRED)
     find_package(OpenGL REQUIRED)
     
-    file(GLOB IMGUI_SRCS "external/imgui/*.cpp" "external/imgui/backends/*.cpp")
+    file(GLOB IMGUI_SRCS "include/external/imgui/*.cpp" "include/external/imgui/backends/*.cpp")
 
     add_executable(helga-gui src/main_gui.cc ${HELGA_CORE_SRCS} ${IMGUI_SRCS})
-    target_include_directories(helga-gui PRIVATE include external/imgui external/imgui/backends)
+    target_include_directories(helga-gui PRIVATE include include/external/imgui include/external/imgui/backends)
     target_link_libraries(helga-gui PUBLIC ${OMP_LIB} SDL2::SDL2 OpenGL::GL)
 endif()
