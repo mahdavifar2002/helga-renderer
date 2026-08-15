@@ -10,8 +10,8 @@ configure_file(
     @ONLY
 )
 
-# Enable ccache for faster builds
-find_program(CCACHE_PROGRAM ccache)
+# Enable sccache or ccache for faster builds
+find_program(CCACHE_PROGRAM NAMES sccache ccache)
 if(CCACHE_PROGRAM)
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
 endif()
@@ -33,7 +33,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(${OPT_FLAGS})
 elseif(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/O2 /fp:fast)
+    add_compile_options(/fp:fast /EHsc)
 endif()
 
 # --- Core Files ---
