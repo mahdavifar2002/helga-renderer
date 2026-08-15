@@ -56,6 +56,7 @@ const char* tonemap_names[] = { "reinhard", "none" };
 // --- Main Function ---
 int main(int argc, char* argv[]) {
     // 1. Setup SDL and OpenGL
+    SDL_SetHint("SDL_WINDOWS_DPI_AWARENESS", "permonitorv2");
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) return -1;
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]) {
         SDL_FreeSurface(icon_surface);
         stbi_image_free(icon_pixels);
     } else {
-        std::cerr << "Warning: Could not load application icon.\n";
+        std::cerr << "WARNING: Could not load application icon.\n";
     }
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
@@ -274,7 +275,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (ImGui::Button("Browse##Input", ImVec2(-1, 40))) {
+        if (ImGui::Button("Browse##Input", ImVec2(-1, 0))) {
             auto selection = pfd::open_file("Select Scene JSON", last_open_dir, 
                                             { "JSON Files", "*.json", "All Files", "*" }).result();
             
@@ -303,7 +304,7 @@ int main(int argc, char* argv[]) {
             ImGui::SetTooltip("%s", output_filepath);
         }
         
-        if (ImGui::Button("Browse##Output", ImVec2(-1, 40))) {
+        if (ImGui::Button("Browse##Output", ImVec2(-1, 0))) {
             // Default the dialog to "render.png" in the last used directory
             std::string default_name = last_save_dir + "/" + helga_defaults::output_file;
             
@@ -343,7 +344,7 @@ int main(int argc, char* argv[]) {
 
         ImGui::Spacing();
         const char* button_text = (app_state.load() == AppState::Rendering) ? "Rendering..." : "Start Render";
-        if (ImGui::Button(button_text, ImVec2(-1, 40))) {
+        if (ImGui::Button(button_text, ImVec2(-1, 0))) {
             
             if (strlen(scene_filepath) == 0 || active_scene_json.empty()) {
                 std::cerr << "WARNING: Cannot start render. No valid scene file is loaded.\n";
@@ -431,7 +432,7 @@ int main(int argc, char* argv[]) {
             ImGui::Spacing();
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-            if (ImGui::Button("Halt Render", ImVec2(-1, 40))) {
+            if (ImGui::Button("Halt Render", ImVec2(-1, 0))) {
                 cancel_request = true;
             }
             ImGui::PopStyleColor(2);
