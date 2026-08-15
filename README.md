@@ -3,34 +3,48 @@
 Helga is a physically-based ray tracer written in C++. This project is based on Peter Shirley's [*Ray Tracing in One Weekend*](https://raytracing.github.io) book series.
 
 ## Prerequisites
-To build and run this project, you will need a Linux environment with the following installed:
+To build this project in a Linux environment, you will need the following packages installed:
+
 * A modern C++ compiler (GCC or Clang)
-* CMake (Version 3.10 or higher)
+
+  `apt install build-essential`
+
+* CMake (Version 3.15 or higher)
+
+  `apt install cmake`
+
+* Ninja build system
+
+  `apt install ninja-build`
+
+* SDL2 and OpenGL (for building the GUI executable as well)
+
+  `apt install libsdl2-dev libgl1-mesa-dev`
 
 ## Build Instructions
 
-This project uses an out-of-source CMake build to keep the workspace clean. To configure and compile the project in `Release` mode (which applies the necessary performance optimizations):
+This project uses an out-of-source CMake build to keep the workspace clean. To configure and compile the project in `Debug` mode:
 
 ```bash
 # Configure the build directory
-cmake -DCMAKE_BUILD_TYPE=Release -B build
+cmake --preset dev-linux
 
 # Enter the build directory
-cd build
+cd build/dev
 
 # Compile the executable
 cmake --build .
 ```
 
 ## Running & Profiling the Render
-Once compiled, you can run the executable and pipe the output to a `.png` and a high dynamic range `.hdr` image file.
+Once compiled, you can run the CLI executable and pipe the output to a `.png` and a high dynamic range `.hdr` image file.
 
 The project uses the [`aminnj/cpptqdm`](https://github.com/aminnj/cpptqdm) header to show the progress bar and benchmark the total render time.
 
-From inside the `build` directory, run the following one-liner to compile and execute the renderer:
+From inside the `build/dev` directory, run the following one-liner to compile and execute the renderer:
 
 ```bash
-cmake --build . && ./helga --width 1920 --samples 50 --scene bedroom.json --output bedroom.png
+cmake --build . && ./helga-cli --width 1920 --samples 50 --scene ../../scenes/bedroom.json --output bedroom.png
 ```
 
 ## Project Structure
