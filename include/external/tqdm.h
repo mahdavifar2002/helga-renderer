@@ -17,6 +17,13 @@
 #include <math.h>
 #include <algorithm>
 
+#if defined(_WIN32)
+static bool env_flag(const char* name) {
+    const char* value = std::getenv(name);
+    return value != nullptr && value[0] != '\0';
+}
+#endif
+
 class tqdm {
     private:
         // time, iteration counters and deques for rate calculations
@@ -34,8 +41,13 @@ class tqdm {
 
         std::vector<const char*> bars = {" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
 
-        bool in_screen = (system("test $STY") == 0);
-        bool in_tmux = (system("test $TMUX") == 0);
+#if defined(_WIN32)
+        bool in_screen = false;
+        bool in_tmux = false;
+#else
+        bool in_screen = env_flag("STY");
+        bool in_tmux = env_flag("TMUX");
+#endif
         bool is_tty = isatty(2);
         bool use_colors = true;
         bool color_transition = true;
@@ -67,12 +79,16 @@ class tqdm {
 
     public:
         tqdm() {
+#if defined(_WIN32)
+            set_theme_basic();
+#else
             if (in_screen) {
                 set_theme_basic();
                 color_transition = false;
             } else if (in_tmux) {
                 color_transition = false;
             }
+#endif
         }
 
         void reset() {
