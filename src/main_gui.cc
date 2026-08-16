@@ -124,6 +124,8 @@ int main(int argc, char* argv[]) {
     // 5. Main GUI Loop
     bool done = false;
     bool is_fullscreen = false;
+    std::unique_ptr<pfd::open_file> pending_open_dialog;
+    std::unique_ptr<pfd::save_file> pending_save_dialog;
 
     auto load_scene_from_path = [&](const std::string& input_filename) {
         
@@ -211,6 +213,34 @@ int main(int argc, char* argv[]) {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
+        // Keep file dialogs asynchronous so only one picker can exist at a time.
+        if (pending_open_dialog && pending_open_dialog->ready(0)) {
+            auto selection = pending_open_dialog->result();
+            pending_open_dialog.reset();
+
+            if (!selection.empty()) {
+                snprintf(scene_filepath, sizeof(scene_filepath), "%s", selection[0].c_str());
+
+                std::filesystem::path p(selection[0]);
+                last_open_dir = p.parent_path().string();
+
+                // Pre-parse the selected scene to sync UI defaults.
+                load_scene_from_path(scene_filepath);
+            }
+        }
+
+        if (pending_save_dialog && pending_save_dialog->ready(0)) {
+            auto destination = pending_save_dialog->result();
+            pending_save_dialog.reset();
+
+            if (!destination.empty()) {
+                snprintf(output_filepath, sizeof(output_filepath), "%s", destination.c_str());
+
+                std::filesystem::path p(destination);
+                last_save_dir = p.parent_path().string();
+            }
+        }
+
         // 6. Update Texture if a new frame is ready
         if (frame_ready) {
             std::lock_guard<std::mutex> lock(buffer_mutex);
@@ -235,7 +265,9 @@ int main(int argc, char* argv[]) {
         ImGui::Separator();
         ImGui::Spacing();
 
-        bool is_ui_disabled = (app_state.load() == AppState::Rendering);
+        bool is_dialog_open = pending_open_dialog || pending_save_dialog;
+        bool is_rendering = (app_state.load() == AppState::Rendering);
+        bool is_ui_disabled = is_rendering || is_dialog_open;
 
         if (is_ui_disabled) {
             ImGui::BeginDisabled();
@@ -275,20 +307,12 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (ImGui::Button("Browse##Input", ImVec2(-1, 0))) {
-            auto selection = pfd::open_file("Select Scene JSON", last_open_dir, 
-                                            { "JSON Files", "*.json", "All Files", "*" }).result();
-            
-            if (!selection.empty()) {
-                snprintf(scene_filepath, sizeof(scene_filepath), "%s", selection[0].c_str());
-                
-                // Update last_open_dir with the selected file's parent folder
-                std::filesystem::path p(selection[0]);
-                last_open_dir = p.parent_path().string();
-
-                // --- PRE-PARSE JSON TO EXTRACT DEFAULTS ---
-                load_scene_from_path(scene_filepath);
-            }
+        if (ImGui::Button("Browse##Input", ImVec2(-1, 0)) && !is_dialog_open) {
+            pending_open_dialog = std::make_unique<pfd::open_file>(
+                "Select Scene JSON",
+                last_open_dir,
+                std::vector<std::string>{ "JSON Files", "*.json", "All Files", "*" }
+            );
         }
 
         // --- OUTPUT CONFIGURATION ---
@@ -304,20 +328,15 @@ int main(int argc, char* argv[]) {
             ImGui::SetTooltip("%s", output_filepath);
         }
         
-        if (ImGui::Button("Browse##Output", ImVec2(-1, 0))) {
+        if (ImGui::Button("Browse##Output", ImVec2(-1, 0)) && !is_dialog_open) {
             // Default the dialog to "render.png" in the last used directory
             std::string default_name = last_save_dir + "/" + helga_defaults::output_file;
-            
-            auto destination = pfd::save_file("Save Render Output", default_name, 
-                                                { "PNG Image", "*.png", "HDR Image", "*.hdr", "PPM Image", "*.ppm" }).result();
-            
-            if (!destination.empty()) {
-                snprintf(output_filepath, sizeof(output_filepath), "%s", destination.c_str());
-                
-                // Remember this directory for next time
-                std::filesystem::path p(destination);
-                last_save_dir = p.parent_path().string();
-            }
+
+            pending_save_dialog = std::make_unique<pfd::save_file>(
+                "Save Render Output",
+                default_name,
+                std::vector<std::string>{ "PNG Image", "*.png", "HDR Image", "*.hdr" }
+            );
         }
         
         ImGui::Spacing();
@@ -419,23 +438,31 @@ int main(int argc, char* argv[]) {
         if (is_ui_disabled) {
             ImGui::EndDisabled();
 
-            // -- RENDERING STATE: Progress and Halting --
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Text("Status: RENDERING...");
-            ImGui::Text("Progress: %d / %d Samples", current_sample.load(), ui_samples);
-            
-            // Progress bar
-            float progress = (float)current_sample.load() / (float)ui_samples;
-            ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f));
-
-            ImGui::Spacing();
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-            if (ImGui::Button("Halt Render", ImVec2(-1, 0))) {
-                cancel_request = true;
+            if (is_dialog_open && !is_rendering) {
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::TextDisabled("File dialog is open...");
             }
-            ImGui::PopStyleColor(2);
+
+            // -- RENDERING STATE: Progress and Halting --
+            if (is_rendering) {
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Text("Status: RENDERING...");
+                ImGui::Text("Progress: %d / %d Samples", current_sample.load(), ui_samples);
+                
+                // Progress bar
+                float progress = (float)current_sample.load() / (float)ui_samples;
+                ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f));
+
+                ImGui::Spacing();
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+                if (ImGui::Button("Halt Render", ImVec2(-1, 0))) {
+                    cancel_request = true;
+                }
+                ImGui::PopStyleColor(2);
+            }
         }
 
         ImGui::EndChild();
