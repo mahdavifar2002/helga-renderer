@@ -46,7 +46,7 @@ jobs:
 
     - name: Install Dependencies (Windows)
       if: runner.os == 'Windows'
-      run: vcpkg install sdl2:x64-windows-static
+      run: vcpkg install --triplet=x64-windows-static
 
     - name: Configure CMake
       run: cmake --preset release ${{ runner.os == 'Windows' && '-DVCPKG_TARGET_TRIPLET=x64-windows-static' || '' }}
