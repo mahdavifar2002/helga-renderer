@@ -23,28 +23,41 @@ To build this project in a Linux environment, you will need the following packag
 
 ## Build Instructions
 
-This project uses an out-of-source CMake build to keep the workspace clean. To configure and compile the project in `Debug` mode:
+This project uses an out-of-source CMake build to keep the workspace clean. To configure and compile the project in `Debug` mode, follow the instructions below.
+
+### Linux Development Build
 
 ```bash
 # Configure the build directory
 cmake --preset dev-linux
 
+# Compile the executable
+cmake --build build/dev
+
 # Enter the build directory
 cd build/dev
-
-# Compile the executable
-cmake --build .
 ```
 
-## Running & Profiling the Render
-Once compiled, you can run the CLI executable and pipe the output to a `.png` and a high dynamic range `.hdr` image file.
-
-The project uses the [`aminnj/cpptqdm`](https://github.com/aminnj/cpptqdm) header to show the progress bar and benchmark the total render time.
-
-From inside the `build/dev` directory, run the following one-liner to compile and execute the renderer:
+### Windows Development Build
 
 ```bash
-cmake --build . && ./helga-cli --width 1920 --samples 50 --scene ../../scenes/bedroom.json --output bedroom.png
+# Configure the build directory
+cmake --preset dev-windows
+
+# Compile the executable
+cmake --build build\dev --preset dev-windows
+
+# Enter the build directory
+cd build\dev
+```
+
+## Running
+Once compiled, you can run the CLI executable and pipe the output to a `.png` and a high dynamic range `.hdr` image file.
+
+The repository contains example JSON scenes which could be used for testing.
+
+```bash
+./helga-cli --width 100 --samples 50 --scene ../../scenes/bedroom.json --output bedroom.png
 ```
 
 ## Project Structure
@@ -54,5 +67,5 @@ cmake --build . && ./helga-cli --width 1920 --samples 50 --scene ../../scenes/be
 
 * `CMakeLists.txt` - Build system configuration and compiler flags.
 
-## Sample rendered scene
+## Sample Rendered Scene
 ![A minimal low-poly scene of a bedroom with two warm creamy lights](screenshots/bedroom.png)

@@ -33,7 +33,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(${OPT_FLAGS})
 elseif(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    add_compile_options(/fp:fast /EHsc)
+    add_compile_options(/FS /fp:fast /EHsc)
 endif()
 
 # --- Core Files ---

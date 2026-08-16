@@ -52,5 +52,12 @@
         "USE_NATIVE_ARCH": "OFF"
       }
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev-windows",
+      "configurePreset": "dev-windows",
+      "jobs": 1
+    }
   ]
 }

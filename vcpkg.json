@@ -1,0 +1,8 @@
+{
+  "name": "my-project",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "sdl2"
+  ],
+  "builtin-baseline": "94a541197763a4f449a1b91478df48c0584a6256"
+}
