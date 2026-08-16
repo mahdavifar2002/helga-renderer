@@ -17,12 +17,10 @@
 #include <math.h>
 #include <algorithm>
 
-#if defined(_WIN32)
 static bool env_flag(const char* name) {
     const char* value = std::getenv(name);
     return value != nullptr && value[0] != '\0';
 }
-#endif
 
 class tqdm {
     private:

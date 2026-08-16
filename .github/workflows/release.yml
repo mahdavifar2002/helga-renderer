@@ -15,7 +15,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            cli_path: build/release/helga-cli
+            gui_path: build/release/helga-gui
+          - os: windows-latest
+            platform: windows
+            cli_path: build/release/Release/helga-cli.exe
+            gui_path: build/release/Release/helga-gui.exe
+          - os: macos-latest
+            platform: macos
+            cli_path: build/release/helga-cli
+            gui_path: build/release/helga-gui
 
     steps:
     - uses: actions/checkout@v6
@@ -47,8 +59,8 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v6
       with:
-        name: helga-${{ matrix.os }}
+        name: helga-${{ matrix.platform }}
+        if-no-files-found: error
         path: |
-          build/release/Release/*.exe
-          build/release/helga-cli
-          build/release/helga-gui
+          ${{ matrix.cli_path }}
+          ${{ matrix.gui_path }}
