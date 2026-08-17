@@ -44,9 +44,9 @@ jobs:
         brew untap aws/tap || true
         brew install sdl2 ccache
 
-    - name: Install Dependencies (Windows)
+    - name: Fetch vcpkg history (Windows)
       if: runner.os == 'Windows'
-      run: vcpkg install --triplet=x64-windows-static
+      run: git -C "C:/vcpkg" fetch origin
 
     - name: Configure CMake
       run: cmake --preset release ${{ runner.os == 'Windows' && '-DVCPKG_TARGET_TRIPLET=x64-windows-static' || '' }}
